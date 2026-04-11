@@ -207,7 +207,8 @@ public partial class DashboardViewModel : ViewModelBase
 
     private void BuildAssetChart(List<GitHubRelease> releases)
     {
-        var breakdown = _analyticsService.GetAssetBreakdown(releases).Take(10).ToList();
+        // 降順取得後に反転: RowSeriesはindex0が下のため、最大値を上に表示するには昇順で渡す
+        var breakdown = _analyticsService.GetAssetBreakdown(releases).Take(10).Reverse().ToList();
         if (breakdown.Count == 0) return;
 
         int n = breakdown.Count;
