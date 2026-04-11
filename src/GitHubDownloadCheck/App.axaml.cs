@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Threading;
 using Avalonia;
@@ -17,8 +18,12 @@ public partial class App : Application
 {
     public override void Initialize()
     {
-        // OS ロケールで言語を自動設定
-        Thread.CurrentThread.CurrentUICulture = CultureInfo.CurrentUICulture;
+        // OS ロケールで言語を自動設定（日本語以外は英語にフォールバック）
+        var culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("ja", StringComparison.OrdinalIgnoreCase)
+            ? CultureInfo.CurrentUICulture
+            : new CultureInfo("en");
+        Thread.CurrentThread.CurrentUICulture = culture;
+        CultureInfo.CurrentUICulture = culture;
 
         AvaloniaXamlLoader.Load(this);
 
