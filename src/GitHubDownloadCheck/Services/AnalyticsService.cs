@@ -24,29 +24,32 @@ public class AnalyticsService
 {
     public AnalyticsSummary Summarize(IReadOnlyList<GitHubRelease> releases)
     {
-        if (releases.Count == 0)
+        var nonDraft = releases.Where(r => !r.Draft).ToList();
+        if (nonDraft.Count == 0)
             return new AnalyticsSummary(0, 0, "-", 0, "-", 0);
 
-        var totalDownloads = releases.Sum(r => r.TotalDownloadCount);
-        var bestRelease = releases.MaxBy(r => r.TotalDownloadCount)!;
-        var allAssets = releases.SelectMany(r => r.Assets).ToList();
-        var bestAsset = allAssets.Count > 0
-            ? allAssets.MaxBy(a => a.DownloadCount)!
-            : null;
+        var totalDownloads = nonDraft.Sum(r => r.TotalDownloadCount);
+        var bestRelease = nonDraft.MaxBy(r => r.TotalDownloadCount)!;
+        var bestAsset = nonDraft
+            .SelectMany(r => r.Assets)
+            .GroupBy(a => a.Name)
+            .Select(g => new AssetBreakdown(g.Key, g.Sum(a => a.DownloadCount)))
+            .MaxBy(a => a.TotalDownloads);
 
         return new AnalyticsSummary(
             TotalDownloads: totalDownloads,
-            ReleaseCount: releases.Count,
+            ReleaseCount: nonDraft.Count,
             MostPopularRelease: bestRelease.DisplayName,
             MostPopularReleaseCount: bestRelease.TotalDownloadCount,
-            MostPopularAsset: bestAsset?.Name ?? "-",
-            MostPopularAssetCount: bestAsset?.DownloadCount ?? 0
+            MostPopularAsset: bestAsset?.AssetName ?? "-",
+            MostPopularAssetCount: bestAsset?.TotalDownloads ?? 0
         );
     }
 
     public List<AssetBreakdown> GetAssetBreakdown(IReadOnlyList<GitHubRelease> releases)
     {
         return releases
+            .Where(r => !r.Draft)
             .SelectMany(r => r.Assets)
             .GroupBy(a => a.Name)
             .Select(g => new AssetBreakdown(g.Key, g.Sum(a => a.DownloadCount)))
