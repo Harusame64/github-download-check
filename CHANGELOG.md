@@ -9,13 +9,13 @@
 
 ---
 
-## [1.0.4] - 2025-xx-xx
+## [1.0.4] - 2026-04-11
 
 ### Fixed
 - Draft releases are now excluded from all download counts and charts
 - Asset summary card now correctly reflects the most downloaded non-draft asset
 
-## [1.0.3] - 2025-xx-xx
+## [1.0.3] - 2026-04-11
 
 ### Changed
 - Release and asset charts changed from vertical bar to horizontal bar (RowSeries) for better readability
@@ -23,7 +23,7 @@
 - Chart tooltips hidden; download counts now displayed as data labels at bar end
 - Mouse wheel scrolling now works correctly over charts (`IsHitTestVisible="False"`)
 
-## [1.0.2] - 2025-xx-xx
+## [1.0.2] - 2026-04-11
 
 ### Added
 - Initial public release
