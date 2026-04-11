@@ -1,0 +1,26 @@
+# Build outputs
+bin/
+obj/
+dist/
+publish/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# .NET
+*.nupkg
+
+# WiX build artifacts
+.wix/
+*.wixpdb
+*.msi
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

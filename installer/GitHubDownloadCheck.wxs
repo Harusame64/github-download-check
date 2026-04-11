@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="GitHub Download Check"
+           Manufacturer="GitHub Download Check"
+           Version="$(env.PRODUCT_VERSION)"
+           UpgradeCode="D4A8C3F2-6B1E-4A7D-8E9F-2C5B0A3D1E6F"
+           Language="1041"
+           Codepage="932">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of GitHub Download Check is already installed."/>
+
+    <MediaTemplate EmbedCab="yes"/>
+
+    <Feature Id="ProductFeature" Title="GitHub Download Check" Level="1">
+      <ComponentGroupRef Id="MainExecutable"/>
+      <ComponentGroupRef Id="StartMenuShortcut"/>
+      <ComponentGroupRef Id="DesktopShortcut"/>
+    </Feature>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER"/>
+
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" Overridable="yes"/>
+
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="GitHub Download Check"/>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="GitHub Download Check"/>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder"/>
+  </Fragment>
+
+  <Fragment>
+
+    <ComponentGroup Id="MainExecutable" Directory="INSTALLFOLDER">
+      <Component Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+        <File Id="MainExe"
+              Source="..\src\GitHubDownloadCheck\bin\Release\net10.0\win-x64\publish\GitHubDownloadCheck.exe"
+              KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="StartMenuShortcut" Directory="ApplicationProgramsFolder">
+      <Component Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="GitHub Download Check"
+                  Description="Analyze GitHub release download counts"
+                  Target="[INSTALLFOLDER]GitHubDownloadCheck.exe"
+                  WorkingDirectory="INSTALLFOLDER"/>
+        <RemoveFolder Id="CleanupStartMenu" On="uninstall"/>
+        <RegistryValue Root="HKCU"
+                       Key="Software\GitHubDownloadCheck"
+                       Name="StartMenuShortcut"
+                       Type="integer" Value="1"
+                       KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DesktopShortcut" Directory="DesktopFolder">
+      <Component Guid="C3D4E5F6-A7B8-9012-CDEF-123456789012">
+        <Shortcut Id="DesktopShortcut"
+                  Name="GitHub Download Check"
+                  Description="Analyze GitHub release download counts"
+                  Target="[INSTALLFOLDER]GitHubDownloadCheck.exe"
+                  WorkingDirectory="INSTALLFOLDER"/>
+        <RegistryValue Root="HKCU"
+                       Key="Software\GitHubDownloadCheck"
+                       Name="DesktopShortcut"
+                       Type="integer" Value="1"
+                       KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+
+  </Fragment>
+
+</Wix>

@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GitHubDownloadCheck.ViewModels"
+             xmlns:models="using:GitHubDownloadCheck.Models"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="GitHubDownloadCheck.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+  <Grid RowDefinitions="Auto,*">
+
+    <!-- Empty state -->
+    <TextBlock Grid.Row="0" Grid.RowSpan="2"
+               Text="左のサイドバーからリポジトリを選択してください"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
+               Opacity="0.5" FontSize="16"
+               IsVisible="{Binding !HasData}"/>
+
+    <!-- Loading -->
+    <ProgressBar Grid.Row="0" IsIndeterminate="True" Height="3" Margin="0"
+                 IsVisible="{Binding IsLoading}"/>
+
+    <!-- Error -->
+    <Border Grid.Row="0" Background="#20FF0000" CornerRadius="6" Padding="12,8" Margin="16,8"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"/>
+    </Border>
+
+    <!-- Main Content -->
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding HasData}" x:Name="MainScrollViewer">
+      <StackPanel Margin="16" Spacing="16">
+
+        <!-- Summary Cards -->
+        <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" >
+          <Border Grid.Column="0" Classes="card" Margin="0,0,8,0">
+            <StackPanel Spacing="4">
+              <TextBlock Text="総ダウンロード数" FontSize="12" Opacity="0.7"/>
+              <TextBlock Text="{Binding TotalDownloads, StringFormat={}{0:N0}}" FontSize="28" FontWeight="Bold"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="1" Classes="card" Margin="0,0,8,0">
+            <StackPanel Spacing="4">
+              <TextBlock Text="リリース数" FontSize="12" Opacity="0.7"/>
+              <TextBlock Text="{Binding ReleaseCount}" FontSize="28" FontWeight="Bold"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Text="最人気リリース" FontSize="12" Opacity="0.7"/>
+              <TextBlock Text="{Binding MostPopularRelease}" FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Text="{Binding MostPopularReleaseCount, StringFormat={}{0:N0} DL}" FontSize="12" Opacity="0.7"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- Download per Release Chart -->
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Text="リリース別ダウンロード数" FontWeight="SemiBold" FontSize="14"/>
+            <lvc:CartesianChart Series="{Binding DownloadSeries}"
+                                XAxes="{Binding DownloadYAxes}"
+                                YAxes="{Binding ReleaseAxes}"
+                                LegendPosition="Hidden"
+                                TooltipPosition="Hidden"
+                                ZoomMode="None"
+                                IsHitTestVisible="False"
+                                Height="{Binding DownloadChartHeight}"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Asset Breakdown Chart -->
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Text="アセット別ダウンロード数 (上位10件)" FontWeight="SemiBold" FontSize="14"/>
+            <lvc:CartesianChart Series="{Binding AssetSeries}"
+                                XAxes="{Binding AssetYAxes}"
+                                YAxes="{Binding AssetAxes}"
+                                LegendPosition="Hidden"
+                                TooltipPosition="Hidden"
+                                ZoomMode="None"
+                                IsHitTestVisible="False"
+                                Height="{Binding AssetChartHeight}"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Period Download Chart -->
+        <Border Classes="card" IsVisible="{Binding HasPeriodData}">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Text="期間別ダウンロード数" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+              <!-- Period Selector -->
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <RadioButton Content="日別" IsChecked="{Binding IsPeriodDaily}"
+                             Command="{Binding SetPeriodDailyCommand}" GroupName="period"/>
+                <RadioButton Content="週別" IsChecked="{Binding IsPeriodWeekly}"
+                             Command="{Binding SetPeriodWeeklyCommand}" GroupName="period"/>
+                <RadioButton Content="月別" IsChecked="{Binding IsPeriodMonthly}"
+                             Command="{Binding SetPeriodMonthlyCommand}" GroupName="period"/>
+              </StackPanel>
+            </Grid>
+            <lvc:CartesianChart Series="{Binding PeriodSeries}"
+                                XAxes="{Binding PeriodXAxes}"
+                                YAxes="{Binding PeriodYAxes}"
+                                LegendPosition="Hidden"
+                                TooltipPosition="Hidden"
+                                ZoomMode="None"
+                                IsHitTestVisible="False"
+                                Height="260"/>
+            <TextBlock Text="※ スナップショットの差分から算出しています。「再取得」を定期的に実行することで精度が向上します。"
+                       FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Trend Chart (shown only when 2+ snapshots) -->
+        <Border Classes="card" IsVisible="{Binding TrendSeries.Length}">
+          <StackPanel Spacing="8">
+            <TextBlock Text="ダウンロード数トレンド (履歴)" FontWeight="SemiBold" FontSize="14"/>
+            <lvc:CartesianChart Series="{Binding TrendSeries}"
+                                XAxes="{Binding TrendAxes}"
+                                YAxes="{Binding TrendYAxes}"
+                                LegendPosition="Hidden"
+                                TooltipPosition="Hidden"
+                                ZoomMode="None"
+                                IsHitTestVisible="False"
+                                Height="220"/>
+            <DataGrid ItemsSource="{Binding SnapshotRows}"
+                      AutoGenerateColumns="False" CanUserReorderColumns="False"
+                      MaxHeight="200" IsReadOnly="True">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="取得日時" Binding="{Binding FetchedAtText}" Width="*"/>
+                <DataGridTextColumn Header="累計DL数" Binding="{Binding TotalDownloadsText}" Width="*"/>
+                <DataGridTextColumn Header="増加分" Binding="{Binding DeltaText}" Width="*"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+        <!-- Release Table -->
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Text="リリース一覧" FontWeight="SemiBold" FontSize="14"/>
+            <DataGrid ItemsSource="{Binding Releases}"
+                      AutoGenerateColumns="False" CanUserReorderColumns="False"
+                      MaxHeight="300" IsReadOnly="True">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="タグ" Binding="{Binding TagName}" Width="120"/>
+                <DataGridTextColumn Header="名前" Binding="{Binding DisplayName}" Width="*"/>
+                <DataGridTextColumn Header="公開日" Binding="{Binding PublishedAtText}" Width="Auto"/>
+                <DataGridCheckBoxColumn Header="プレリリース" Binding="{Binding Prerelease}" Width="Auto"/>
+                <DataGridTextColumn Header="DL数" Binding="{Binding TotalDownloadCountText}" Width="Auto"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

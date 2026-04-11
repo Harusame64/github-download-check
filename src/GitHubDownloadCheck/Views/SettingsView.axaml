@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GitHubDownloadCheck.ViewModels"
+             xmlns:models="using:GitHubDownloadCheck.Models"
+             x:Class="GitHubDownloadCheck.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="24">
+
+      <!-- GitHub PAT -->
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Text="GitHub Personal Access Token (PAT)" FontWeight="SemiBold" FontSize="15"/>
+          <TextBlock Text="未設定の場合、APIリクエストは60回/時に制限されます。PATを設定すると5,000回/時になります。"
+                     TextWrapping="Wrap" Opacity="0.7" FontSize="12"/>
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
+            <TextBox Grid.Column="0" Text="{Binding GitHubToken}"
+                     PasswordChar="●" Watermark="ghp_..." Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Content="保存" Command="{Binding SaveTokenCommand}"
+                    Classes="accent"/>
+          </Grid>
+          <TextBlock Text="{Binding StatusMessage}" Foreground="Green" FontSize="12"
+                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Repository Management -->
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Text="リポジトリ管理" FontWeight="SemiBold" FontSize="15"/>
+
+          <!-- Add new -->
+          <Grid ColumnDefinitions="*,*,*,Auto" RowDefinitions="Auto" >
+            <TextBox Grid.Column="0" Text="{Binding NewOwner}" Watermark="Owner (例: microsoft)" Margin="0,0,6,0"/>
+            <TextBox Grid.Column="1" Text="{Binding NewRepo}" Watermark="Repository (例: vscode)" Margin="0,0,6,0"/>
+            <TextBox Grid.Column="2" Text="{Binding NewDisplayName}" Watermark="表示名 (省略可)" Margin="0,0,6,0"/>
+            <Button Grid.Column="3" Content="追加" Command="{Binding AddRepositoryCommand}" Classes="accent"/>
+          </Grid>
+
+          <!-- List -->
+          <ItemsControl ItemsSource="{Binding Repositories}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="models:RepositoryEntry">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        CornerRadius="6" Padding="12,8" Margin="0,2">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                      <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
+                      <TextBlock Text="{Binding FullName}" FontSize="11" Opacity="0.6"
+                                 IsVisible="{Binding DisplayName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="削除"
+                            Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RemoveRepositoryCommand}"
+                            CommandParameter="{Binding}"
+                            Foreground="Red" Background="Transparent" Padding="8,4"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock Text="リポジトリが登録されていません。上のフォームから追加してください。"
+                     Opacity="0.5" FontSize="12" HorizontalAlignment="Center"
+                     IsVisible="{Binding !Repositories.Count}"/>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
