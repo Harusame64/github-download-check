@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GitHubDownloadCheck.ViewModels"
              xmlns:models="using:GitHubDownloadCheck.Models"
+             xmlns:h="using:GitHubDownloadCheck.Helpers"
              x:Class="GitHubDownloadCheck.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 
@@ -12,12 +13,12 @@
       <Border Classes="card">
         <StackPanel Spacing="12">
           <TextBlock Text="GitHub Personal Access Token (PAT)" FontWeight="SemiBold" FontSize="15"/>
-          <TextBlock Text="未設定の場合、APIリクエストは60回/時に制限されます。PATを設定すると5,000回/時になります。"
+          <TextBlock Text="{h:Localize Settings_PATDescription}"
                      TextWrapping="Wrap" Opacity="0.7" FontSize="12"/>
           <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
             <TextBox Grid.Column="0" Text="{Binding GitHubToken}"
                      PasswordChar="●" Watermark="ghp_..." Margin="0,0,8,0"/>
-            <Button Grid.Column="1" Content="保存" Command="{Binding SaveTokenCommand}"
+            <Button Grid.Column="1" Content="{h:Localize Settings_Save}" Command="{Binding SaveTokenCommand}"
                     Classes="accent"/>
           </Grid>
           <TextBlock Text="{Binding StatusMessage}" Foreground="Green" FontSize="12"
@@ -28,14 +29,14 @@
       <!-- Repository Management -->
       <Border Classes="card">
         <StackPanel Spacing="12">
-          <TextBlock Text="リポジトリ管理" FontWeight="SemiBold" FontSize="15"/>
+          <TextBlock Text="{h:Localize Settings_RepositoriesTitle}" FontWeight="SemiBold" FontSize="15"/>
 
           <!-- Add new -->
           <Grid ColumnDefinitions="*,*,*,Auto" RowDefinitions="Auto" >
-            <TextBox Grid.Column="0" Text="{Binding NewOwner}" Watermark="Owner (例: microsoft)" Margin="0,0,6,0"/>
-            <TextBox Grid.Column="1" Text="{Binding NewRepo}" Watermark="Repository (例: vscode)" Margin="0,0,6,0"/>
-            <TextBox Grid.Column="2" Text="{Binding NewDisplayName}" Watermark="表示名 (省略可)" Margin="0,0,6,0"/>
-            <Button Grid.Column="3" Content="追加" Command="{Binding AddRepositoryCommand}" Classes="accent"/>
+            <TextBox Grid.Column="0" Text="{Binding NewOwner}" Watermark="{h:Localize Settings_OwnerWatermark}" Margin="0,0,6,0"/>
+            <TextBox Grid.Column="1" Text="{Binding NewRepo}" Watermark="{h:Localize Settings_RepoWatermark}" Margin="0,0,6,0"/>
+            <TextBox Grid.Column="2" Text="{Binding NewDisplayName}" Watermark="{h:Localize Settings_DisplayNameWatermark}" Margin="0,0,6,0"/>
+            <Button Grid.Column="3" Content="{h:Localize Settings_Add}" Command="{Binding AddRepositoryCommand}" Classes="accent"/>
           </Grid>
 
           <!-- List -->
@@ -50,7 +51,7 @@
                       <TextBlock Text="{Binding FullName}" FontSize="11" Opacity="0.6"
                                  IsVisible="{Binding DisplayName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Content="削除"
+                    <Button Grid.Column="1" Content="{h:Localize Settings_Delete}"
                             Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).RemoveRepositoryCommand}"
                             CommandParameter="{Binding}"
                             Foreground="Red" Background="Transparent" Padding="8,4"/>
@@ -60,7 +61,7 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <TextBlock Text="リポジトリが登録されていません。上のフォームから追加してください。"
+          <TextBlock Text="{h:Localize Settings_NoRepositories}"
                      Opacity="0.5" FontSize="12" HorizontalAlignment="Center"
                      IsVisible="{Binding !Repositories.Count}"/>
         </StackPanel>

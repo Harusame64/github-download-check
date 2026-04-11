@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GitHubDownloadCheck.Models;
+using GitHubDownloadCheck.Resources;
 
 namespace GitHubDownloadCheck.Services;
 
@@ -93,7 +94,7 @@ public class AnalyticsService
                 .Select(g => new PeriodDownloads(
                     g.Key,
                     g.Sum(x => x.Delta),
-                    $"{g.Key:MM/dd}週"))
+                    $"{g.Key:MM/dd}{Strings.Analytics_WeekSuffix}"))
                 .OrderBy(x => x.PeriodStart)
                 .ToList(),
 

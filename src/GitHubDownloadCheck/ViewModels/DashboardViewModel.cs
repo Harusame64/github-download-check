@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GitHubDownloadCheck.Models;
+using GitHubDownloadCheck.Resources;
 using GitHubDownloadCheck.Services;
 using Avalonia;
 using LiveChartsCore;
@@ -166,7 +167,7 @@ public partial class DashboardViewModel : ViewModelBase
             new RowSeries<double>
             {
                 Values = values,
-                Name = "ダウンロード数",
+                Name = Strings.Chart_SeriesDownloads,
                 Fill = new SolidColorPaint(SKColors.SteelBlue),
                 DataLabelsFormatter = (point) =>
                 {
@@ -221,7 +222,7 @@ public partial class DashboardViewModel : ViewModelBase
             new RowSeries<double>
             {
                 Values = values,
-                Name = "アセット別ダウンロード数",
+                Name = Strings.Chart_SeriesAssets,
                 Fill = new SolidColorPaint(SKColors.SeaGreen),
                 DataLabelsFormatter = (point) =>
                 {
@@ -291,9 +292,9 @@ public partial class DashboardViewModel : ViewModelBase
                 Values = values,
                 Name = period switch
                 {
-                    AnalyticsPeriod.Weekly  => "週別ダウンロード数",
-                    AnalyticsPeriod.Monthly => "月別ダウンロード数",
-                    _                       => "日別ダウンロード数",
+                    AnalyticsPeriod.Weekly  => Strings.Chart_SeriesWeekly,
+                    AnalyticsPeriod.Monthly => Strings.Chart_SeriesMonthly,
+                    _                       => Strings.Chart_SeriesDaily,
                 },
                 Fill = new SolidColorPaint(color),
             }
@@ -331,7 +332,7 @@ public partial class DashboardViewModel : ViewModelBase
                 new LineSeries<DateTimePoint>
                 {
                     Values = trendValues,
-                    Name = "累計ダウンロード数",
+                    Name = Strings.Chart_SeriesTrend,
                     Stroke = new SolidColorPaint(SKColors.OrangeRed, 2),
                     Fill = null,
                     GeometrySize = 8,

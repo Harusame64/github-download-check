@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GitHubDownloadCheck.Models;
+using GitHubDownloadCheck.Resources;
 using GitHubDownloadCheck.Services;
 
 namespace GitHubDownloadCheck.ViewModels;
@@ -44,7 +45,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(NewOwner) || string.IsNullOrWhiteSpace(NewRepo))
         {
-            StatusMessage = "Owner と Repository は必須です。";
+            StatusMessage = Strings.Settings_ValidationOwnerRepo;
             return;
         }
 
@@ -62,7 +63,7 @@ public partial class SettingsViewModel : ViewModelBase
         NewOwner = "";
         NewRepo = "";
         NewDisplayName = "";
-        StatusMessage = $"'{entry.Label}' を追加しました。";
+        StatusMessage = string.Format(Strings.Settings_AddedMessage, entry.Label);
     }
 
     [RelayCommand]
@@ -71,7 +72,7 @@ public partial class SettingsViewModel : ViewModelBase
         Repositories.Remove(entry);
         _settings.Repositories.Remove(entry);
         Save();
-        StatusMessage = $"'{entry.Label}' を削除しました。";
+        StatusMessage = string.Format(Strings.Settings_RemovedMessage, entry.Label);
     }
 
     [RelayCommand]
@@ -79,7 +80,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settings.GitHubToken = GitHubToken.Trim();
         Save();
-        StatusMessage = "GitHub PATを保存しました。";
+        StatusMessage = Strings.Settings_PATSaved;
     }
 
     private void Save() => _settingsService.Save(_settings);

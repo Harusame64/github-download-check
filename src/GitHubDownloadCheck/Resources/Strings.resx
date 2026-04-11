@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string"/>
+              <xsd:attribute name="name" type="xsd:string"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Sidebar / MainWindow -->
+  <data name="Sidebar_AppSubtitle" xml:space="preserve">
+    <value>リリース ダウンロード分析</value>
+  </data>
+  <data name="Sidebar_Settings" xml:space="preserve">
+    <value>⚙ 設定</value>
+  </data>
+  <data name="Sidebar_Repositories" xml:space="preserve">
+    <value>リポジトリ</value>
+  </data>
+  <data name="Sidebar_AddRepositoryHint" xml:space="preserve">
+    <value>設定からリポジトリを追加してください</value>
+  </data>
+  <data name="TopBar_SettingsTitle" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="TopBar_Refresh" xml:space="preserve">
+    <value>↺ 再取得</value>
+  </data>
+  <data name="TopBar_Close" xml:space="preserve">
+    <value>✕ 閉じる</value>
+  </data>
+
+  <!-- Settings View -->
+  <data name="Settings_PATDescription" xml:space="preserve">
+    <value>未設定の場合、APIリクエストは60回/時に制限されます。PATを設定すると5,000回/時になります。</value>
+  </data>
+  <data name="Settings_OwnerWatermark" xml:space="preserve">
+    <value>Owner (例: microsoft)</value>
+  </data>
+  <data name="Settings_RepoWatermark" xml:space="preserve">
+    <value>Repository (例: vscode)</value>
+  </data>
+  <data name="Settings_DisplayNameWatermark" xml:space="preserve">
+    <value>表示名 (省略可)</value>
+  </data>
+  <data name="Settings_Add" xml:space="preserve">
+    <value>追加</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Settings_Delete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Settings_RepositoriesTitle" xml:space="preserve">
+    <value>リポジトリ管理</value>
+  </data>
+  <data name="Settings_NoRepositories" xml:space="preserve">
+    <value>リポジトリが登録されていません。上のフォームから追加してください。</value>
+  </data>
+
+  <!-- Dashboard View -->
+  <data name="Dashboard_SelectRepository" xml:space="preserve">
+    <value>左のサイドバーからリポジトリを選択してください</value>
+  </data>
+  <data name="Dashboard_TotalDownloads" xml:space="preserve">
+    <value>総ダウンロード数</value>
+  </data>
+  <data name="Dashboard_ReleaseCount" xml:space="preserve">
+    <value>リリース数</value>
+  </data>
+  <data name="Dashboard_MostPopular" xml:space="preserve">
+    <value>最人気リリース</value>
+  </data>
+  <data name="Dashboard_DownloadsByRelease" xml:space="preserve">
+    <value>リリース別ダウンロード数</value>
+  </data>
+  <data name="Dashboard_DownloadsByAsset" xml:space="preserve">
+    <value>アセット別ダウンロード数 (上位10件)</value>
+  </data>
+  <data name="Dashboard_DownloadsByPeriod" xml:space="preserve">
+    <value>期間別ダウンロード数</value>
+  </data>
+  <data name="Dashboard_PeriodDaily" xml:space="preserve">
+    <value>日別</value>
+  </data>
+  <data name="Dashboard_PeriodWeekly" xml:space="preserve">
+    <value>週別</value>
+  </data>
+  <data name="Dashboard_PeriodMonthly" xml:space="preserve">
+    <value>月別</value>
+  </data>
+  <data name="Dashboard_PeriodNote" xml:space="preserve">
+    <value>※ スナップショットの差分から算出しています。「再取得」を定期的に実行することで精度が向上します。</value>
+  </data>
+  <data name="Dashboard_TrendTitle" xml:space="preserve">
+    <value>ダウンロード数トレンド (履歴)</value>
+  </data>
+  <data name="Dashboard_ColFetchedAt" xml:space="preserve">
+    <value>取得日時</value>
+  </data>
+  <data name="Dashboard_ColTotalDownloads" xml:space="preserve">
+    <value>累計DL数</value>
+  </data>
+  <data name="Dashboard_ColDelta" xml:space="preserve">
+    <value>増加分</value>
+  </data>
+  <data name="Dashboard_ReleasesTitle" xml:space="preserve">
+    <value>リリース一覧</value>
+  </data>
+  <data name="Dashboard_ColTag" xml:space="preserve">
+    <value>タグ</value>
+  </data>
+  <data name="Dashboard_ColName" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="Dashboard_ColPublishedAt" xml:space="preserve">
+    <value>公開日</value>
+  </data>
+  <data name="Dashboard_ColPrerelease" xml:space="preserve">
+    <value>プレリリース</value>
+  </data>
+  <data name="Dashboard_ColDownloads" xml:space="preserve">
+    <value>DL数</value>
+  </data>
+
+  <!-- Settings ViewModel -->
+  <data name="Settings_ValidationOwnerRepo" xml:space="preserve">
+    <value>Owner と Repository は必須です。</value>
+  </data>
+  <data name="Settings_AddedMessage" xml:space="preserve">
+    <value>'{0}' を追加しました。</value>
+  </data>
+  <data name="Settings_RemovedMessage" xml:space="preserve">
+    <value>'{0}' を削除しました。</value>
+  </data>
+  <data name="Settings_PATSaved" xml:space="preserve">
+    <value>GitHub PATを保存しました。</value>
+  </data>
+
+  <!-- Chart series names -->
+  <data name="Chart_SeriesDownloads" xml:space="preserve">
+    <value>ダウンロード数</value>
+  </data>
+  <data name="Chart_SeriesAssets" xml:space="preserve">
+    <value>アセット別ダウンロード数</value>
+  </data>
+  <data name="Chart_SeriesWeekly" xml:space="preserve">
+    <value>週別ダウンロード数</value>
+  </data>
+  <data name="Chart_SeriesMonthly" xml:space="preserve">
+    <value>月別ダウンロード数</value>
+  </data>
+  <data name="Chart_SeriesDaily" xml:space="preserve">
+    <value>日別ダウンロード数</value>
+  </data>
+  <data name="Chart_SeriesTrend" xml:space="preserve">
+    <value>累計ダウンロード数</value>
+  </data>
+
+  <!-- GitHub API errors -->
+  <data name="Api_RepoNotFound" xml:space="preserve">
+    <value>リポジトリ '{0}/{1}' が見つかりません。</value>
+  </data>
+  <data name="Api_RateLimit" xml:space="preserve">
+    <value>レート制限に達しました。GitHub PATを設定すると制限が緩和されます。{0}</value>
+  </data>
+  <data name="Api_InvalidToken" xml:space="preserve">
+    <value>GitHub PATが無効です。設定を確認してください。</value>
+  </data>
+  <data name="Api_GenericError" xml:space="preserve">
+    <value>GitHub API エラー ({0}): {1}</value>
+  </data>
+
+  <!-- Analytics -->
+  <data name="Analytics_WeekSuffix" xml:space="preserve">
+    <value>週</value>
+  </data>
+
+</root>

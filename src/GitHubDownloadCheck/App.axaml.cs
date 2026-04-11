@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -15,6 +17,9 @@ public partial class App : Application
 {
     public override void Initialize()
     {
+        // OS ロケールで言語を自動設定
+        Thread.CurrentThread.CurrentUICulture = CultureInfo.CurrentUICulture;
+
         AvaloniaXamlLoader.Load(this);
 
         // OS テーマに合わせて LiveCharts テーマを初期設定

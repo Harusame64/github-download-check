@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using GitHubDownloadCheck.Models;
+using GitHubDownloadCheck.Resources;
 
 namespace GitHubDownloadCheck.Services;
 
@@ -44,10 +45,10 @@ public class GitHubApiService
                 var body = await response.Content.ReadAsStringAsync(ct);
                 throw response.StatusCode switch
                 {
-                    System.Net.HttpStatusCode.NotFound => new InvalidOperationException($"リポジトリ '{owner}/{repo}' が見つかりません。"),
-                    System.Net.HttpStatusCode.Forbidden => new InvalidOperationException($"レート制限に達しました。GitHub PATを設定すると制限が緩和されます。\n{body}"),
-                    System.Net.HttpStatusCode.Unauthorized => new InvalidOperationException("GitHub PATが無効です。設定を確認してください。"),
-                    _ => new InvalidOperationException($"GitHub API エラー ({response.StatusCode}): {body}")
+                    System.Net.HttpStatusCode.NotFound    => new InvalidOperationException(string.Format(Strings.Api_RepoNotFound, owner, repo)),
+                    System.Net.HttpStatusCode.Forbidden   => new InvalidOperationException(string.Format(Strings.Api_RateLimit, body)),
+                    System.Net.HttpStatusCode.Unauthorized => new InvalidOperationException(Strings.Api_InvalidToken),
+                    _ => new InvalidOperationException(string.Format(Strings.Api_GenericError, response.StatusCode, body))
                 };
             }
 

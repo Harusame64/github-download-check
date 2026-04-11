@@ -3,6 +3,7 @@
              xmlns:vm="using:GitHubDownloadCheck.ViewModels"
              xmlns:models="using:GitHubDownloadCheck.Models"
              xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:h="using:GitHubDownloadCheck.Helpers"
              x:Class="GitHubDownloadCheck.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
 
@@ -10,7 +11,7 @@
 
     <!-- Empty state -->
     <TextBlock Grid.Row="0" Grid.RowSpan="2"
-               Text="左のサイドバーからリポジトリを選択してください"
+               Text="{h:Localize Dashboard_SelectRepository}"
                HorizontalAlignment="Center" VerticalAlignment="Center"
                Opacity="0.5" FontSize="16"
                IsVisible="{Binding !HasData}"/>
@@ -33,19 +34,19 @@
         <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" >
           <Border Grid.Column="0" Classes="card" Margin="0,0,8,0">
             <StackPanel Spacing="4">
-              <TextBlock Text="総ダウンロード数" FontSize="12" Opacity="0.7"/>
+              <TextBlock Text="{h:Localize Dashboard_TotalDownloads}" FontSize="12" Opacity="0.7"/>
               <TextBlock Text="{Binding TotalDownloads, StringFormat={}{0:N0}}" FontSize="28" FontWeight="Bold"/>
             </StackPanel>
           </Border>
           <Border Grid.Column="1" Classes="card" Margin="0,0,8,0">
             <StackPanel Spacing="4">
-              <TextBlock Text="リリース数" FontSize="12" Opacity="0.7"/>
+              <TextBlock Text="{h:Localize Dashboard_ReleaseCount}" FontSize="12" Opacity="0.7"/>
               <TextBlock Text="{Binding ReleaseCount}" FontSize="28" FontWeight="Bold"/>
             </StackPanel>
           </Border>
           <Border Grid.Column="2" Classes="card">
             <StackPanel Spacing="4">
-              <TextBlock Text="最人気リリース" FontSize="12" Opacity="0.7"/>
+              <TextBlock Text="{h:Localize Dashboard_MostPopular}" FontSize="12" Opacity="0.7"/>
               <TextBlock Text="{Binding MostPopularRelease}" FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
               <TextBlock Text="{Binding MostPopularReleaseCount, StringFormat={}{0:N0} DL}" FontSize="12" Opacity="0.7"/>
             </StackPanel>
@@ -55,7 +56,7 @@
         <!-- Download per Release Chart -->
         <Border Classes="card">
           <StackPanel Spacing="8">
-            <TextBlock Text="リリース別ダウンロード数" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{h:Localize Dashboard_DownloadsByRelease}" FontWeight="SemiBold" FontSize="14"/>
             <lvc:CartesianChart Series="{Binding DownloadSeries}"
                                 XAxes="{Binding DownloadYAxes}"
                                 YAxes="{Binding ReleaseAxes}"
@@ -70,7 +71,7 @@
         <!-- Asset Breakdown Chart -->
         <Border Classes="card">
           <StackPanel Spacing="8">
-            <TextBlock Text="アセット別ダウンロード数 (上位10件)" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{h:Localize Dashboard_DownloadsByAsset}" FontWeight="SemiBold" FontSize="14"/>
             <lvc:CartesianChart Series="{Binding AssetSeries}"
                                 XAxes="{Binding AssetYAxes}"
                                 YAxes="{Binding AssetAxes}"
@@ -86,14 +87,14 @@
         <Border Classes="card" IsVisible="{Binding HasPeriodData}">
           <StackPanel Spacing="8">
             <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Text="期間別ダウンロード数" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="0" Text="{h:Localize Dashboard_DownloadsByPeriod}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
               <!-- Period Selector -->
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                <RadioButton Content="日別" IsChecked="{Binding IsPeriodDaily}"
+                <RadioButton Content="{h:Localize Dashboard_PeriodDaily}" IsChecked="{Binding IsPeriodDaily}"
                              Command="{Binding SetPeriodDailyCommand}" GroupName="period"/>
-                <RadioButton Content="週別" IsChecked="{Binding IsPeriodWeekly}"
+                <RadioButton Content="{h:Localize Dashboard_PeriodWeekly}" IsChecked="{Binding IsPeriodWeekly}"
                              Command="{Binding SetPeriodWeeklyCommand}" GroupName="period"/>
-                <RadioButton Content="月別" IsChecked="{Binding IsPeriodMonthly}"
+                <RadioButton Content="{h:Localize Dashboard_PeriodMonthly}" IsChecked="{Binding IsPeriodMonthly}"
                              Command="{Binding SetPeriodMonthlyCommand}" GroupName="period"/>
               </StackPanel>
             </Grid>
@@ -105,7 +106,7 @@
                                 ZoomMode="None"
                                 IsHitTestVisible="False"
                                 Height="260"/>
-            <TextBlock Text="※ スナップショットの差分から算出しています。「再取得」を定期的に実行することで精度が向上します。"
+            <TextBlock Text="{h:Localize Dashboard_PeriodNote}"
                        FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
           </StackPanel>
         </Border>
@@ -113,7 +114,7 @@
         <!-- Trend Chart (shown only when 2+ snapshots) -->
         <Border Classes="card" IsVisible="{Binding TrendSeries.Length}">
           <StackPanel Spacing="8">
-            <TextBlock Text="ダウンロード数トレンド (履歴)" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{h:Localize Dashboard_TrendTitle}" FontWeight="SemiBold" FontSize="14"/>
             <lvc:CartesianChart Series="{Binding TrendSeries}"
                                 XAxes="{Binding TrendAxes}"
                                 YAxes="{Binding TrendYAxes}"
@@ -126,9 +127,9 @@
                       AutoGenerateColumns="False" CanUserReorderColumns="False"
                       MaxHeight="200" IsReadOnly="True">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="取得日時" Binding="{Binding FetchedAtText}" Width="*"/>
-                <DataGridTextColumn Header="累計DL数" Binding="{Binding TotalDownloadsText}" Width="*"/>
-                <DataGridTextColumn Header="増加分" Binding="{Binding DeltaText}" Width="*"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColFetchedAt}" Binding="{Binding FetchedAtText}" Width="*"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColTotalDownloads}" Binding="{Binding TotalDownloadsText}" Width="*"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColDelta}" Binding="{Binding DeltaText}" Width="*"/>
               </DataGrid.Columns>
             </DataGrid>
           </StackPanel>
@@ -137,16 +138,16 @@
         <!-- Release Table -->
         <Border Classes="card">
           <StackPanel Spacing="8">
-            <TextBlock Text="リリース一覧" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{h:Localize Dashboard_ReleasesTitle}" FontWeight="SemiBold" FontSize="14"/>
             <DataGrid ItemsSource="{Binding Releases}"
                       AutoGenerateColumns="False" CanUserReorderColumns="False"
                       MaxHeight="300" IsReadOnly="True">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="タグ" Binding="{Binding TagName}" Width="120"/>
-                <DataGridTextColumn Header="名前" Binding="{Binding DisplayName}" Width="*"/>
-                <DataGridTextColumn Header="公開日" Binding="{Binding PublishedAtText}" Width="Auto"/>
-                <DataGridCheckBoxColumn Header="プレリリース" Binding="{Binding Prerelease}" Width="Auto"/>
-                <DataGridTextColumn Header="DL数" Binding="{Binding TotalDownloadCountText}" Width="Auto"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColTag}" Binding="{Binding TagName}" Width="120"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColName}" Binding="{Binding DisplayName}" Width="*"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColPublishedAt}" Binding="{Binding PublishedAtText}" Width="Auto"/>
+                <DataGridCheckBoxColumn Header="{h:Localize Dashboard_ColPrerelease}" Binding="{Binding Prerelease}" Width="Auto"/>
+                <DataGridTextColumn Header="{h:Localize Dashboard_ColDownloads}" Binding="{Binding TotalDownloadCountText}" Width="Auto"/>
               </DataGrid.Columns>
             </DataGrid>
           </StackPanel>
