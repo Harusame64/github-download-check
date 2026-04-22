@@ -7,7 +7,8 @@
            Version="$(env.PRODUCT_VERSION)"
            UpgradeCode="D4A8C3F2-6B1E-4A7D-8E9F-2C5B0A3D1E6F"
            Language="1041"
-           Codepage="932">
+           Codepage="932"
+           Scope="perUser">
 
     <SummaryInformation Keywords="Installer, GitHub, Downloads" 
                         Description="GitHub Download Check Installer"
@@ -30,7 +31,7 @@
   </Package>
 
   <Fragment>
-    <StandardDirectory Id="ProgramFiles6432Folder">
+    <StandardDirectory Id="LocalAppDataFolder">
       <Directory Id="INSTALLFOLDER" Name="GitHub Download Check"/>
     </StandardDirectory>
 
