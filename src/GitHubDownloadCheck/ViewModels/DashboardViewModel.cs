@@ -306,7 +306,15 @@ public partial class DashboardViewModel : ViewModelBase
 
     private void LoadSnapshotTrend(string repoKey)
     {
-        var snapshots = _cacheService.GetSnapshots(repoKey);
+        var rawSnapshots = _cacheService.GetSnapshots(repoKey);
+        
+        // 同一日に複数回収集した場合は、その日の最終分のみを採用して集約する
+        var snapshots = rawSnapshots
+            .GroupBy(s => s.FetchedAt.ToLocalTime().Date)
+            .Select(g => g.OrderByDescending(s => s.FetchedAt).First())
+            .OrderBy(s => s.FetchedAt)
+            .ToList();
+
         _currentSnapshots = snapshots;
         SnapshotRows.Clear();
 
