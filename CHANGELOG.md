@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3] - 2026-04-22
+
+### Changed
+- MSI インストーラーにメタデータを追加し、信頼性を向上
+- README に Windows SmartScreen 警告への対処法を追記
+
 ## [1.1.2] - 2026-04-22
 
 ### Changed

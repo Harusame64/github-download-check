@@ -3,11 +3,15 @@
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
   <Package Name="GitHub Download Check"
-           Manufacturer="GitHub Download Check"
+           Manufacturer="Harusame64 (Open Source)"
            Version="$(env.PRODUCT_VERSION)"
            UpgradeCode="D4A8C3F2-6B1E-4A7D-8E9F-2C5B0A3D1E6F"
            Language="1041"
            Codepage="932">
+
+    <SummaryInformation Keywords="Installer, GitHub, Downloads" 
+                        Description="GitHub Download Check Installer"
+                        Manufacturer="Harusame64"/>
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of GitHub Download Check is already installed."/>
 
