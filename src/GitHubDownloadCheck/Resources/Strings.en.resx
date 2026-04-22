@@ -149,7 +149,7 @@
     <value>Download Trend (History)</value>
   </data>
   <data name="Dashboard_ColFetchedAt" xml:space="preserve">
-    <value>Fetched At</value>
+    <value>Date</value>
   </data>
   <data name="Dashboard_ColTotalDownloads" xml:space="preserve">
     <value>Total Downloads</value>

@@ -318,6 +318,7 @@ public partial class DashboardViewModel : ViewModelBase
         _currentSnapshots = snapshots;
         SnapshotRows.Clear();
 
+        var rows = new List<SnapshotRow>();
         for (int i = 0; i < snapshots.Count; i++)
         {
             var snap = snapshots[i];
@@ -326,7 +327,13 @@ public partial class DashboardViewModel : ViewModelBase
                 ? total - snapshots[i - 1].Releases.Sum(r => r.TotalDownloadCount)
                 : null;
 
-            SnapshotRows.Add(new SnapshotRow(snap.FetchedAt.ToLocalTime(), total, delta));
+            rows.Add(new SnapshotRow(snap.FetchedAt.ToLocalTime(), total, delta));
+        }
+
+        // 最新のものを上に表示するため、逆順で追加する
+        for (int i = rows.Count - 1; i >= 0; i--)
+        {
+            SnapshotRows.Add(rows[i]);
         }
 
         if (snapshots.Count >= 2)

@@ -149,7 +149,7 @@
     <value>ダウンロード数トレンド (履歴)</value>
   </data>
   <data name="Dashboard_ColFetchedAt" xml:space="preserve">
-    <value>取得日時</value>
+    <value>取得日</value>
   </data>
   <data name="Dashboard_ColTotalDownloads" xml:space="preserve">
     <value>累計DL数</value>
