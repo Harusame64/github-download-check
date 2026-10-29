@@ -72,6 +72,20 @@
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}"/>
     </Style>
+    <!-- 長い一覧の「すべて表示 / 折りたたむ」 -->
+    <Style Selector="Button.toggleMore">
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Padding" Value="12,5"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.toggleMore:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+    </Style>
   </UserControl.Styles>
 
   <Grid RowDefinitions="Auto,Auto,*">
@@ -187,6 +201,8 @@
                                 XAxes="{Binding DownloadYAxes}"
                                 YAxes="{Binding ReleaseAxes}"
                                 Height="{Binding DownloadChartHeight}"/>
+            <Button Classes="toggleMore" Command="{Binding ToggleReleaseBarsCommand}"
+                    Content="{Binding ReleaseBarsToggleText}" IsVisible="{Binding CanExpandReleaseBars}"/>
           </StackPanel>
         </Border>
 
@@ -225,6 +241,8 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <Button Classes="toggleMore" Command="{Binding ToggleSnapshotRowsCommand}"
+                    Content="{Binding SnapshotRowsToggleText}" IsVisible="{Binding CanExpandSnapshotRows}"/>
           </StackPanel>
         </Border>
 
@@ -257,6 +275,8 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <Button Classes="toggleMore" Command="{Binding ToggleReleaseRowsCommand}"
+                    Content="{Binding ReleaseRowsToggleText}" IsVisible="{Binding CanExpandReleaseRows}"/>
           </StackPanel>
         </Border>
 

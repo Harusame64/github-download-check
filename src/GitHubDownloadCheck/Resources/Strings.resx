@@ -253,5 +253,11 @@
   <data name="Settings_LanguageAuto" xml:space="preserve">
     <value>自動（OS の言語に合わせる）</value>
   </data>
+  <data name="Dashboard_ShowAll" xml:space="preserve">
+    <value>すべて表示（{0}件）</value>
+  </data>
+  <data name="Dashboard_ShowLess" xml:space="preserve">
+    <value>折りたたむ</value>
+  </data>
 
 </root>

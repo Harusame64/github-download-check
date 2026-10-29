@@ -91,11 +91,30 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty] private bool _isPeriodWeekly;
     [ObservableProperty] private bool _isPeriodMonthly;
 
+    // 長い一覧・グラフは最初この件数だけ出し、「すべて表示」で広げる
+    private const int CollapsedCount = 10;
+
+    // 開閉の状態はリポジトリを切り替えても保つ（見たい長さは利用者の好みなので）
+    [ObservableProperty] private bool _showAllReleaseBars;
+    [ObservableProperty] private bool _showAllReleaseRows;
+    [ObservableProperty] private bool _showAllSnapshotRows;
+
+    [ObservableProperty] private bool _canExpandReleaseBars;
+    [ObservableProperty] private bool _canExpandReleaseRows;
+    [ObservableProperty] private bool _canExpandSnapshotRows;
+
+    [ObservableProperty] private string _releaseBarsToggleText = "";
+    [ObservableProperty] private string _releaseRowsToggleText = "";
+    [ObservableProperty] private string _snapshotRowsToggleText = "";
+
     // Data table
     public ObservableCollection<GitHubRelease> Releases { get; } = new();
 
     // Snapshot trend
     public ObservableCollection<SnapshotRow> SnapshotRows { get; } = new();
+
+    private List<GitHubRelease> _allReleaseRows = new();
+    private List<SnapshotRow> _allSnapshotRows = new();
 
     /// <summary>チャートの中身を差し替えたときに発火する。View 側で再描画を確実に行うために使う。</summary>
     public event EventHandler? ChartsRebuilt;
@@ -218,7 +237,52 @@ public partial class DashboardViewModel : ViewModelBase
     {
         if (_statusFactory is not null)
             StatusText = _statusFactory();
+        RefreshReleaseRows();
+        RefreshSnapshotRows();
         BuildCharts();
+    }
+
+    private static string ToggleText(bool showAll, int total) =>
+        showAll ? Strings.Dashboard_ShowLess : string.Format(Strings.Dashboard_ShowAll, total);
+
+    [RelayCommand]
+    private void ToggleReleaseBars()
+    {
+        ShowAllReleaseBars = !ShowAllReleaseBars;
+        BuildDownloadChart(_currentReleases);
+        ChartsRebuilt?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private void ToggleReleaseRows()
+    {
+        ShowAllReleaseRows = !ShowAllReleaseRows;
+        RefreshReleaseRows();
+    }
+
+    [RelayCommand]
+    private void ToggleSnapshotRows()
+    {
+        ShowAllSnapshotRows = !ShowAllSnapshotRows;
+        RefreshSnapshotRows();
+    }
+
+    private void RefreshReleaseRows()
+    {
+        Releases.Clear();
+        foreach (var r in ShowAllReleaseRows ? _allReleaseRows : _allReleaseRows.Take(CollapsedCount))
+            Releases.Add(r);
+        CanExpandReleaseRows = _allReleaseRows.Count > CollapsedCount;
+        ReleaseRowsToggleText = ToggleText(ShowAllReleaseRows, _allReleaseRows.Count);
+    }
+
+    private void RefreshSnapshotRows()
+    {
+        SnapshotRows.Clear();
+        foreach (var row in ShowAllSnapshotRows ? _allSnapshotRows : _allSnapshotRows.Take(CollapsedCount))
+            SnapshotRows.Add(row);
+        CanExpandSnapshotRows = _allSnapshotRows.Count > CollapsedCount;
+        SnapshotRowsToggleText = ToggleText(ShowAllSnapshotRows, _allSnapshotRows.Count);
     }
 
     private void Apply(List<GitHubRelease> releases, List<DownloadSnapshot> snapshots)
@@ -235,9 +299,8 @@ public partial class DashboardViewModel : ViewModelBase
         MostPopularAssetCount = summary.MostPopularAssetCount;
 
         // Releases list (newest first, excluding drafts)
-        Releases.Clear();
-        foreach (var r in releases.Where(r => !r.Draft).OrderByDescending(r => r.PublishedAt))
-            Releases.Add(r);
+        _allReleaseRows = releases.Where(r => !r.Draft).OrderByDescending(r => r.PublishedAt).ToList();
+        RefreshReleaseRows();
 
         LoadSnapshotRows();
         BuildCharts();
@@ -254,8 +317,10 @@ public partial class DashboardViewModel : ViewModelBase
         MostPopularReleaseCount = 0;
         MostPopularAsset = "-";
         MostPopularAssetCount = 0;
-        Releases.Clear();
-        SnapshotRows.Clear();
+        _allReleaseRows = new();
+        _allSnapshotRows = new();
+        RefreshReleaseRows();
+        RefreshSnapshotRows();
         BuildCharts();
         HasData = false;
     }
@@ -338,7 +403,10 @@ public partial class DashboardViewModel : ViewModelBase
 
     private void BuildDownloadChart(List<GitHubRelease> releases)
     {
-        var ordered = releases.Where(r => !r.Draft).OrderBy(r => r.PublishedAt).TakeLast(20).ToList();
+        var all = releases.Where(r => !r.Draft).OrderBy(r => r.PublishedAt).ToList();
+        CanExpandReleaseBars = all.Count > CollapsedCount;
+        ReleaseBarsToggleText = ToggleText(ShowAllReleaseBars, all.Count);
+        var ordered = ShowAllReleaseBars ? all : all.TakeLast(CollapsedCount).ToList();
         int n = ordered.Count;
         var labels = ordered.Select(r => r.TagName).ToArray();
         var values = ordered.Select(r => (double)r.TotalDownloadCount).ToArray();
@@ -411,10 +479,11 @@ public partial class DashboardViewModel : ViewModelBase
         // 増分はアセット単位で数えるので、取得に失敗した回が混じっても負にならない
         var points = _analyticsService.GetSnapshotPoints(_currentSnapshots);
 
-        SnapshotRows.Clear();
         // 最新のものを上に表示する
+        _allSnapshotRows = new List<SnapshotRow>(points.Count);
         for (int i = points.Count - 1; i >= 0; i--)
-            SnapshotRows.Add(new SnapshotRow(points[i].FetchedAt.ToLocalTime(), points[i].Total, points[i].Delta));
+            _allSnapshotRows.Add(new SnapshotRow(points[i].FetchedAt.ToLocalTime(), points[i].Total, points[i].Delta));
+        RefreshSnapshotRows();
     }
 
     private void BuildTrendChart()

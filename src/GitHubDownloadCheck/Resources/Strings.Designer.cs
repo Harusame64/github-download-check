@@ -65,6 +65,8 @@ internal static class Strings
     public static string Dashboard_ColPublishedAt     => Get(nameof(Dashboard_ColPublishedAt));
     public static string Dashboard_ColPrerelease      => Get(nameof(Dashboard_ColPrerelease));
     public static string Dashboard_ColDownloads       => Get(nameof(Dashboard_ColDownloads));
+    public static string Dashboard_ShowAll            => Get(nameof(Dashboard_ShowAll));
+    public static string Dashboard_ShowLess           => Get(nameof(Dashboard_ShowLess));
 
     // Settings ViewModel messages
     public static string Settings_ValidationOwnerRepo => Get(nameof(Settings_ValidationOwnerRepo));
