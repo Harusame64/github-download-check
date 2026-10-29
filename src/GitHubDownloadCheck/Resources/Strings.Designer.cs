@@ -34,9 +34,17 @@ internal static class Strings
     public static string Settings_Delete              => Get(nameof(Settings_Delete));
     public static string Settings_RepositoriesTitle   => Get(nameof(Settings_RepositoriesTitle));
     public static string Settings_NoRepositories      => Get(nameof(Settings_NoRepositories));
+    public static string Settings_LanguageTitle       => Get(nameof(Settings_LanguageTitle));
+    public static string Settings_LanguageAuto        => Get(nameof(Settings_LanguageAuto));
 
     // Dashboard View
     public static string Dashboard_SelectRepository   => Get(nameof(Dashboard_SelectRepository));
+    public static string Dashboard_MostPopularAsset   => Get(nameof(Dashboard_MostPopularAsset));
+    public static string Dashboard_HistoryTitle       => Get(nameof(Dashboard_HistoryTitle));
+    public static string Dashboard_Loading           => Get(nameof(Dashboard_Loading));
+    public static string Dashboard_LastUpdated        => Get(nameof(Dashboard_LastUpdated));
+    public static string Dashboard_Refreshing         => Get(nameof(Dashboard_Refreshing));
+    public static string Dashboard_ShowingCached      => Get(nameof(Dashboard_ShowingCached));
     public static string Dashboard_TotalDownloads     => Get(nameof(Dashboard_TotalDownloads));
     public static string Dashboard_ReleaseCount       => Get(nameof(Dashboard_ReleaseCount));
     public static string Dashboard_MostPopular        => Get(nameof(Dashboard_MostPopular));

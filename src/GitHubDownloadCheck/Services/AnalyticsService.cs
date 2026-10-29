@@ -19,6 +19,9 @@ public record AssetBreakdown(string AssetName, long TotalDownloads);
 
 public record PeriodDownloads(DateTime PeriodStart, long Downloads, string Label);
 
+/// <summary>スナップショット1件ぶんの累計と、前回からの増分（初回は null）。</summary>
+public record SnapshotPoint(DateTime FetchedAt, long Total, long? Delta);
+
 public enum AnalyticsPeriod { Daily, Weekly, Monthly }
 
 public class AnalyticsService
@@ -65,18 +68,11 @@ public class AnalyticsService
         IReadOnlyList<DownloadSnapshot> snapshots,
         AnalyticsPeriod period)
     {
-        if (snapshots.Count < 2)
+        var points = GetSnapshotPoints(snapshots);
+        if (points.Count < 2)
             return new List<PeriodDownloads>();
 
-        // 連続するスナップショット間の差分を計算
-        var deltas = new List<(DateTime At, long Delta)>();
-        for (int i = 1; i < snapshots.Count; i++)
-        {
-            var prev = snapshots[i - 1].Releases.Sum(r => r.TotalDownloadCount);
-            var curr = snapshots[i].Releases.Sum(r => r.TotalDownloadCount);
-            var delta = Math.Max(0, curr - prev); // 負の値は無視
-            deltas.Add((snapshots[i].FetchedAt.ToLocalTime(), delta));
-        }
+        var deltas = points.Skip(1).Select(p => (At: p.FetchedAt.ToLocalTime(), Delta: p.Delta ?? 0)).ToList();
 
         return period switch
         {
@@ -109,6 +105,58 @@ public class AnalyticsService
 
             _ => throw new ArgumentOutOfRangeException(nameof(period))
         };
+    }
+
+    /// <summary>
+    /// スナップショットごとの累計と増分を求める。
+    /// 増分はアセット単位で「前回わかっていた値からの増加」だけを数えるので、負にならない。
+    /// 取得が不完全だった回（リリースやアセットが欠けた回）があっても、
+    /// 欠けた分は減少とみなさず、次に現れたときも二重には数えない。
+    /// </summary>
+    public List<SnapshotPoint> GetSnapshotPoints(IReadOnlyList<DownloadSnapshot> snapshots)
+    {
+        var result = new List<SnapshotPoint>();
+        // アセットは GitHub のアセット ID で識別する（名前の変更や同名の再アップロードに強い）。
+        // ID を保存していなかった頃のキャッシュは名前で識別し、ID 付きの回に切り替わるときに一度だけ引き継ぐ
+        var lastKnownById = new Dictionary<long, long>();
+        var lastKnownByName = new Dictionary<string, long>();
+        long cumulative = 0;
+
+        foreach (var snap in snapshots)
+        {
+            long delta = 0;
+            foreach (var r in snap.Releases)
+            {
+                foreach (var a in r.Assets)
+                {
+                    var nameKey = $"{r.Id}/{r.TagName}/{a.Name}";
+                    long prev;
+                    if (a.Id == 0)
+                    {
+                        lastKnownByName.TryGetValue(nameKey, out prev);
+                    }
+                    else if (!lastKnownById.TryGetValue(a.Id, out prev)
+                             && lastKnownByName.Remove(nameKey, out var legacy))
+                    {
+                        prev = legacy;
+                    }
+
+                    if (a.DownloadCount > prev)
+                        delta += a.DownloadCount - prev;
+
+                    var known = Math.Max(prev, a.DownloadCount);
+                    if (a.Id == 0)
+                        lastKnownByName[nameKey] = known;
+                    else
+                        lastKnownById[a.Id] = known;
+                }
+            }
+
+            cumulative += delta;
+            result.Add(new SnapshotPoint(snap.FetchedAt, cumulative, result.Count == 0 ? null : delta));
+        }
+
+        return result;
     }
 
     private static DateTime GetWeekStart(DateTime dt)

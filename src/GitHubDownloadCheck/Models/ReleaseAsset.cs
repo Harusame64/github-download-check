@@ -4,6 +4,10 @@ namespace GitHubDownloadCheck.Models;
 
 public class ReleaseAsset
 {
+    // GitHub のアセット ID。古いキャッシュには無いので 0 になる
+    [JsonPropertyName("id")]
+    public long Id { get; set; }
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
 

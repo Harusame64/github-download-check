@@ -229,4 +229,29 @@
     <value> wk</value>
   </data>
 
+  <data name="Dashboard_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Dashboard_LastUpdated" xml:space="preserve">
+    <value>Last fetched {0}</value>
+  </data>
+  <data name="Dashboard_Refreshing" xml:space="preserve">
+    <value>Fetching the latest numbers…</value>
+  </data>
+  <data name="Dashboard_ShowingCached" xml:space="preserve">
+    <value>Could not reach GitHub. Showing data fetched at {0}.</value>
+  </data>
+  <data name="Dashboard_MostPopularAsset" xml:space="preserve">
+    <value>Most Popular Asset</value>
+  </data>
+  <data name="Dashboard_HistoryTitle" xml:space="preserve">
+    <value>Fetch History</value>
+  </data>
+  <data name="Settings_LanguageTitle" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings_LanguageAuto" xml:space="preserve">
+    <value>Automatic (follow OS)</value>
+  </data>
+
 </root>

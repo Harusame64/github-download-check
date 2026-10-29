@@ -229,4 +229,29 @@
     <value>週</value>
   </data>
 
+  <data name="Dashboard_Loading" xml:space="preserve">
+    <value>読み込み中…</value>
+  </data>
+  <data name="Dashboard_LastUpdated" xml:space="preserve">
+    <value>最終取得 {0}</value>
+  </data>
+  <data name="Dashboard_Refreshing" xml:space="preserve">
+    <value>最新の値を取得中…</value>
+  </data>
+  <data name="Dashboard_ShowingCached" xml:space="preserve">
+    <value>GitHub に接続できなかったため、{0} に取得したデータを表示しています。</value>
+  </data>
+  <data name="Dashboard_MostPopularAsset" xml:space="preserve">
+    <value>最人気アセット</value>
+  </data>
+  <data name="Dashboard_HistoryTitle" xml:space="preserve">
+    <value>取得履歴</value>
+  </data>
+  <data name="Settings_LanguageTitle" xml:space="preserve">
+    <value>表示言語</value>
+  </data>
+  <data name="Settings_LanguageAuto" xml:space="preserve">
+    <value>自動（OS の言語に合わせる）</value>
+  </data>
+
 </root>

@@ -7,149 +7,256 @@
              x:Class="GitHubDownloadCheck.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
 
-  <Grid RowDefinitions="Auto,*">
+  <UserControl.Styles>
+    <Style Selector="lvc|CartesianChart">
+      <Setter Property="LegendPosition" Value="Hidden"/>
+      <Setter Property="TooltipPosition" Value="Hidden"/>
+      <Setter Property="ZoomMode" Value="None"/>
+      <!-- LiveCharts がホイールを消費するため、ScrollViewer に素通しする -->
+      <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+    <Style Selector="RadioButton.segment">
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="Padding" Value="12,4"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="bg" CornerRadius="5" Padding="{TemplateBinding Padding}" Background="Transparent">
+            <ContentPresenter Content="{TemplateBinding Content}" FontSize="12"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="RadioButton.segment:pointerover /template/ Border#bg">
+      <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+    </Style>
+    <Style Selector="RadioButton.segment:checked /template/ Border#bg">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+      <Setter Property="BoxShadow" Value="0 1 2 0 #22000000"/>
+    </Style>
+    <Style Selector="RadioButton.segment:checked">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <!-- 表: ページと一緒にスクロールする素のリスト（入れ子のスクロールを作らない） -->
+    <Style Selector="Grid.tableHeader">
+      <Setter Property="Margin" Value="12,0"/>
+    </Style>
+    <Style Selector="Grid.tableHeader TextBlock">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    </Style>
+    <Style Selector="Border.tableRow">
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="Border.tableRow:pointerover">
+      <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+    </Style>
+    <Style Selector="Border.tableRow TextBlock">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Border.badge">
+      <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Padding" Value="6,1"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Border.badge TextBlock">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}"/>
+    </Style>
+  </UserControl.Styles>
 
-    <!-- Empty state -->
-    <TextBlock Grid.Row="0" Grid.RowSpan="2"
-               Text="{h:Localize Dashboard_SelectRepository}"
-               HorizontalAlignment="Center" VerticalAlignment="Center"
-               Opacity="0.5" FontSize="16"
-               IsVisible="{Binding !HasData}"/>
+  <Grid RowDefinitions="Auto,Auto,*">
 
     <!-- Loading -->
-    <ProgressBar Grid.Row="0" IsIndeterminate="True" Height="3" Margin="0"
+    <ProgressBar Grid.Row="0" IsIndeterminate="True" Height="2" MinHeight="2" Margin="0"
+                 CornerRadius="0" Background="Transparent"
+                 Foreground="{DynamicResource AccentBrush}"
                  IsVisible="{Binding IsLoading}"/>
 
-    <!-- Error -->
-    <Border Grid.Row="0" Background="#20FF0000" CornerRadius="6" Padding="12,8" Margin="16,8"
+    <!-- Error / offline notice -->
+    <Border Grid.Row="1" CornerRadius="8" Padding="14,10" Margin="24,14,24,0" BorderThickness="1"
+            Background="{DynamicResource WarningBackgroundBrush}"
+            BorderBrush="{DynamicResource WarningBorderBrush}"
             IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-      <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"/>
+      <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" FontSize="12"
+                 Foreground="{DynamicResource WarningForegroundBrush}"/>
     </Border>
 
+    <!-- Empty state -->
+    <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6"
+                IsVisible="{Binding !HasData}">
+      <TextBlock Text="{h:Localize Dashboard_SelectRepository}" Classes="caption" FontSize="15"
+                 HorizontalAlignment="Center"
+                 IsVisible="{Binding SelectedRepository, Converter={x:Static ObjectConverters.IsNull}}"/>
+      <TextBlock Text="{h:Localize Dashboard_Loading}" Classes="caption" FontSize="15"
+                 HorizontalAlignment="Center"
+                 IsVisible="{Binding IsLoading}"/>
+    </StackPanel>
+
     <!-- Main Content -->
-    <ScrollViewer Grid.Row="1" IsVisible="{Binding HasData}" x:Name="MainScrollViewer">
-      <StackPanel Margin="16" Spacing="16">
+    <ScrollViewer Grid.Row="2" IsVisible="{Binding HasData}" x:Name="MainScrollViewer">
+      <StackPanel Margin="24,18,24,28" Spacing="16" MaxWidth="1200">
 
         <!-- Summary Cards -->
-        <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto" >
-          <Border Grid.Column="0" Classes="card" Margin="0,0,8,0">
-            <StackPanel Spacing="4">
-              <TextBlock Text="{h:Localize Dashboard_TotalDownloads}" FontSize="12" Opacity="0.7"/>
-              <TextBlock Text="{Binding TotalDownloads, StringFormat={}{0:N0}}" FontSize="28" FontWeight="Bold"/>
+        <UniformGrid Columns="4" Margin="-6,0">
+          <Border Classes="card" Margin="6,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{h:Localize Dashboard_TotalDownloads}" Classes="caption"/>
+              <TextBlock Text="{Binding TotalDownloads, StringFormat={}{0:N0}}" Classes="metric"
+                         Foreground="{DynamicResource AccentBrush}"/>
             </StackPanel>
           </Border>
-          <Border Grid.Column="1" Classes="card" Margin="0,0,8,0">
-            <StackPanel Spacing="4">
-              <TextBlock Text="{h:Localize Dashboard_ReleaseCount}" FontSize="12" Opacity="0.7"/>
-              <TextBlock Text="{Binding ReleaseCount}" FontSize="28" FontWeight="Bold"/>
+          <Border Classes="card" Margin="6,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{h:Localize Dashboard_ReleaseCount}" Classes="caption"/>
+              <TextBlock Text="{Binding ReleaseCount}" Classes="metric"/>
             </StackPanel>
           </Border>
-          <Border Grid.Column="2" Classes="card">
-            <StackPanel Spacing="4">
-              <TextBlock Text="{h:Localize Dashboard_MostPopular}" FontSize="12" Opacity="0.7"/>
-              <TextBlock Text="{Binding MostPopularRelease}" FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-              <TextBlock Text="{Binding MostPopularReleaseCount, StringFormat={}{0:N0} DL}" FontSize="12" Opacity="0.7"/>
+          <Border Classes="card" Margin="6,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{h:Localize Dashboard_MostPopular}" Classes="caption"/>
+              <TextBlock Text="{Binding MostPopularRelease}" FontSize="17" FontWeight="SemiBold"
+                         TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+              <TextBlock Text="{Binding MostPopularReleaseCount, StringFormat={}{0:N0} DL}" Classes="muted"/>
             </StackPanel>
           </Border>
-        </Grid>
+          <Border Classes="card" Margin="6,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{h:Localize Dashboard_MostPopularAsset}" Classes="caption"/>
+              <TextBlock Text="{Binding MostPopularAsset}" FontSize="17" FontWeight="SemiBold"
+                         TextTrimming="CharacterEllipsis" Margin="0,4,0,0"
+                         ToolTip.Tip="{Binding MostPopularAsset}"/>
+              <TextBlock Text="{Binding MostPopularAssetCount, StringFormat={}{0:N0} DL}" Classes="muted"/>
+            </StackPanel>
+          </Border>
+        </UniformGrid>
 
-        <!-- Download per Release Chart -->
-        <Border Classes="card">
-          <StackPanel Spacing="8">
-            <TextBlock Text="{h:Localize Dashboard_DownloadsByRelease}" FontWeight="SemiBold" FontSize="14"/>
-            <lvc:CartesianChart Series="{Binding DownloadSeries}"
-                                XAxes="{Binding DownloadYAxes}"
-                                YAxes="{Binding ReleaseAxes}"
-                                LegendPosition="Hidden"
-                                TooltipPosition="Hidden"
-                                ZoomMode="None"
-                                IsHitTestVisible="False"
-                                Height="{Binding DownloadChartHeight}"/>
-          </StackPanel>
-        </Border>
-
-        <!-- Asset Breakdown Chart -->
-        <Border Classes="card">
-          <StackPanel Spacing="8">
-            <TextBlock Text="{h:Localize Dashboard_DownloadsByAsset}" FontWeight="SemiBold" FontSize="14"/>
-            <lvc:CartesianChart Series="{Binding AssetSeries}"
-                                XAxes="{Binding AssetYAxes}"
-                                YAxes="{Binding AssetAxes}"
-                                LegendPosition="Hidden"
-                                TooltipPosition="Hidden"
-                                ZoomMode="None"
-                                IsHitTestVisible="False"
-                                Height="{Binding AssetChartHeight}"/>
+        <!-- Trend Chart (shown only when 2+ snapshots) -->
+        <Border Classes="card" IsVisible="{Binding HasTrendData}">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{h:Localize Dashboard_TrendTitle}" Classes="cardTitle"/>
+            <lvc:CartesianChart x:Name="TrendChart"
+                                Series="{Binding TrendSeries}"
+                                XAxes="{Binding TrendAxes}"
+                                YAxes="{Binding TrendYAxes}"
+                                Height="220"/>
           </StackPanel>
         </Border>
 
         <!-- Period Download Chart -->
         <Border Classes="card" IsVisible="{Binding HasPeriodData}">
-          <StackPanel Spacing="8">
+          <StackPanel Spacing="10">
             <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Text="{h:Localize Dashboard_DownloadsByPeriod}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="0" Text="{h:Localize Dashboard_DownloadsByPeriod}" Classes="cardTitle" VerticalAlignment="Center"/>
               <!-- Period Selector -->
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                <RadioButton Content="{h:Localize Dashboard_PeriodDaily}" IsChecked="{Binding IsPeriodDaily}"
-                             Command="{Binding SetPeriodDailyCommand}" GroupName="period"/>
-                <RadioButton Content="{h:Localize Dashboard_PeriodWeekly}" IsChecked="{Binding IsPeriodWeekly}"
-                             Command="{Binding SetPeriodWeeklyCommand}" GroupName="period"/>
-                <RadioButton Content="{h:Localize Dashboard_PeriodMonthly}" IsChecked="{Binding IsPeriodMonthly}"
-                             Command="{Binding SetPeriodMonthlyCommand}" GroupName="period"/>
-              </StackPanel>
+              <Border Grid.Column="1" CornerRadius="7" Padding="3" Background="{DynamicResource NavHoverBrush}">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                  <RadioButton Classes="segment" Content="{h:Localize Dashboard_PeriodDaily}" IsChecked="{Binding IsPeriodDaily}"
+                               Command="{Binding SetPeriodDailyCommand}" GroupName="period"/>
+                  <RadioButton Classes="segment" Content="{h:Localize Dashboard_PeriodWeekly}" IsChecked="{Binding IsPeriodWeekly}"
+                               Command="{Binding SetPeriodWeeklyCommand}" GroupName="period"/>
+                  <RadioButton Classes="segment" Content="{h:Localize Dashboard_PeriodMonthly}" IsChecked="{Binding IsPeriodMonthly}"
+                               Command="{Binding SetPeriodMonthlyCommand}" GroupName="period"/>
+                </StackPanel>
+              </Border>
             </Grid>
-            <lvc:CartesianChart Series="{Binding PeriodSeries}"
+            <lvc:CartesianChart x:Name="PeriodChart"
+                                Series="{Binding PeriodSeries}"
                                 XAxes="{Binding PeriodXAxes}"
                                 YAxes="{Binding PeriodYAxes}"
-                                LegendPosition="Hidden"
-                                TooltipPosition="Hidden"
-                                ZoomMode="None"
-                                IsHitTestVisible="False"
-                                Height="260"/>
-            <TextBlock Text="{h:Localize Dashboard_PeriodNote}"
-                       FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
+                                Height="240"/>
+            <TextBlock Text="{h:Localize Dashboard_PeriodNote}" Classes="muted" TextWrapping="Wrap"/>
           </StackPanel>
         </Border>
 
-        <!-- Trend Chart (shown only when 2+ snapshots) -->
-        <Border Classes="card" IsVisible="{Binding TrendSeries.Length}">
-          <StackPanel Spacing="8">
-            <TextBlock Text="{h:Localize Dashboard_TrendTitle}" FontWeight="SemiBold" FontSize="14"/>
-            <lvc:CartesianChart Series="{Binding TrendSeries}"
-                                XAxes="{Binding TrendAxes}"
-                                YAxes="{Binding TrendYAxes}"
-                                LegendPosition="Hidden"
-                                TooltipPosition="Hidden"
-                                ZoomMode="None"
-                                IsHitTestVisible="False"
-                                Height="220"/>
-            <DataGrid ItemsSource="{Binding SnapshotRows}"
-                      AutoGenerateColumns="False" CanUserReorderColumns="False"
-                      MaxHeight="200" IsReadOnly="True">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColFetchedAt}" Binding="{Binding FetchedAtText}" Width="*"/>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColTotalDownloads}" Binding="{Binding TotalDownloadsText}" Width="*"/>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColDelta}" Binding="{Binding DeltaText}" Width="*"/>
-              </DataGrid.Columns>
-            </DataGrid>
+        <!-- Download per Release Chart -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{h:Localize Dashboard_DownloadsByRelease}" Classes="cardTitle"/>
+            <lvc:CartesianChart x:Name="ReleaseChart"
+                                Series="{Binding DownloadSeries}"
+                                XAxes="{Binding DownloadYAxes}"
+                                YAxes="{Binding ReleaseAxes}"
+                                Height="{Binding DownloadChartHeight}"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Asset Breakdown Chart -->
+        <Border Classes="card" IsVisible="{Binding HasAssetData}">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{h:Localize Dashboard_DownloadsByAsset}" Classes="cardTitle"/>
+            <lvc:CartesianChart x:Name="AssetChart"
+                                Series="{Binding AssetSeries}"
+                                XAxes="{Binding AssetYAxes}"
+                                YAxes="{Binding AssetAxes}"
+                                Height="{Binding AssetChartHeight}"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Snapshot history -->
+        <Border Classes="card" IsVisible="{Binding HasTrendData}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="{h:Localize Dashboard_HistoryTitle}" Classes="cardTitle" Margin="0,0,0,4"/>
+            <Grid Classes="tableHeader" ColumnDefinitions="*,*,*">
+              <TextBlock Grid.Column="0" Text="{h:Localize Dashboard_ColFetchedAt}"/>
+              <TextBlock Grid.Column="1" Text="{h:Localize Dashboard_ColTotalDownloads}" HorizontalAlignment="Right"/>
+              <TextBlock Grid.Column="2" Text="{h:Localize Dashboard_ColDelta}" HorizontalAlignment="Right"/>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding SnapshotRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SnapshotRow">
+                  <Border Classes="tableRow">
+                    <Grid ColumnDefinitions="*,*,*">
+                      <TextBlock Grid.Column="0" Text="{Binding FetchedAtText}"/>
+                      <TextBlock Grid.Column="1" Text="{Binding TotalDownloadsText}" HorizontalAlignment="Right"/>
+                      <TextBlock Grid.Column="2" Text="{Binding DeltaText}" HorizontalAlignment="Right"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
         </Border>
 
         <!-- Release Table -->
         <Border Classes="card">
-          <StackPanel Spacing="8">
-            <TextBlock Text="{h:Localize Dashboard_ReleasesTitle}" FontWeight="SemiBold" FontSize="14"/>
-            <DataGrid ItemsSource="{Binding Releases}"
-                      AutoGenerateColumns="False" CanUserReorderColumns="False"
-                      MaxHeight="300" IsReadOnly="True">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColTag}" Binding="{Binding TagName}" Width="120"/>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColName}" Binding="{Binding DisplayName}" Width="*"/>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColPublishedAt}" Binding="{Binding PublishedAtText}" Width="Auto"/>
-                <DataGridCheckBoxColumn Header="{h:Localize Dashboard_ColPrerelease}" Binding="{Binding Prerelease}" Width="Auto"/>
-                <DataGridTextColumn Header="{h:Localize Dashboard_ColDownloads}" Binding="{Binding TotalDownloadCountText}" Width="Auto"/>
-              </DataGrid.Columns>
-            </DataGrid>
+          <StackPanel Spacing="6">
+            <TextBlock Text="{h:Localize Dashboard_ReleasesTitle}" Classes="cardTitle" Margin="0,0,0,4"/>
+            <Grid Classes="tableHeader" ColumnDefinitions="140,*,110,110">
+              <TextBlock Grid.Column="0" Text="{h:Localize Dashboard_ColTag}"/>
+              <TextBlock Grid.Column="1" Text="{h:Localize Dashboard_ColName}"/>
+              <TextBlock Grid.Column="2" Text="{h:Localize Dashboard_ColPublishedAt}"/>
+              <TextBlock Grid.Column="3" Text="{h:Localize Dashboard_ColDownloads}" HorizontalAlignment="Right"/>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Releases}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="models:GitHubRelease">
+                  <Border Classes="tableRow">
+                    <Grid ColumnDefinitions="140,*,110,110">
+                      <TextBlock Grid.Column="0" Text="{Binding TagName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
+                        <Border Classes="badge" IsVisible="{Binding Prerelease}">
+                          <TextBlock Text="{h:Localize Dashboard_ColPrerelease}"/>
+                        </Border>
+                      </StackPanel>
+                      <TextBlock Grid.Column="2" Text="{Binding PublishedAtText}" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                      <TextBlock Grid.Column="3" Text="{Binding TotalDownloadCountText}" HorizontalAlignment="Right"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
         </Border>
 

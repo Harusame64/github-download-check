@@ -23,7 +23,7 @@ GitHub リポジトリのリリースダウンロード数を取得・グラフ�
 - **トレンドチャート** — 累計DL数の時系列推移
 - **スナップショット履歴** — 過去の取得データをテーブル表示
 - **ダーク/ライトテーマ対応**
-- **多言語対応** — 日本語・英語（OS ロケール自動判定）
+- **多言語対応** — 日本語・英語（OS ロケール自動判定、設定画面で切替可能）
 
 ### インストール
 
@@ -95,7 +95,7 @@ Register multiple repositories and compare them at a glance.
 - **Trend chart** — cumulative download count over time
 - **Snapshot history table** — past fetched data
 - **Dark / Light theme support**
-- **i18n** — Japanese and English (auto-detected from OS locale)
+- **i18n** — Japanese and English (auto-detected from OS locale, switchable in Settings)
 
 ### Installation
 

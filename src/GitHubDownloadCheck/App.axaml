@@ -8,9 +8,95 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F4F5F7"/>
+                    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#FBFBFC"/>
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#E3E5E8"/>
+                    <SolidColorBrush x:Key="DividerBrush" Color="#E3E5E8"/>
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#5F6368"/>
+                    <SolidColorBrush x:Key="TextMutedBrush" Color="#8A8F98"/>
+                    <SolidColorBrush x:Key="AccentBrush" Color="#2A78D6"/>
+                    <SolidColorBrush x:Key="AccentSoftBrush" Color="#1A2A78D6"/>
+                    <SolidColorBrush x:Key="NavHoverBrush" Color="#0D000000"/>
+                    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FFF6E5"/>
+                    <SolidColorBrush x:Key="WarningBorderBrush" Color="#F0C987"/>
+                    <SolidColorBrush x:Key="WarningForegroundBrush" Color="#7A4B00"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#141517"/>
+                    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1B1C1F"/>
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#1F2023"/>
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#2C2E33"/>
+                    <SolidColorBrush x:Key="DividerBrush" Color="#2C2E33"/>
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B4B7BD"/>
+                    <SolidColorBrush x:Key="TextMutedBrush" Color="#7D828B"/>
+                    <SolidColorBrush x:Key="AccentBrush" Color="#3987E5"/>
+                    <SolidColorBrush x:Key="AccentSoftBrush" Color="#263987E5"/>
+                    <SolidColorBrush x:Key="NavHoverBrush" Color="#10FFFFFF"/>
+                    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#2B2416"/>
+                    <SolidColorBrush x:Key="WarningBorderBrush" Color="#5C4A22"/>
+                    <SolidColorBrush x:Key="WarningForegroundBrush" Color="#F2C46D"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+
+        <!-- カード -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="20,16"/>
+        </Style>
+
+        <!-- テキストの役割 -->
+        <Style Selector="TextBlock.cardTitle">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TextBlock.caption">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.muted">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.metric">
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <!-- アクセントボタン -->
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Opacity" Value="0.88"/>
+        </Style>
+        <Style Selector="Button.accent:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Opacity" Value="0.75"/>
+        </Style>
+        <Style Selector="Button.subtle">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+
     </Application.Styles>
 </Application>

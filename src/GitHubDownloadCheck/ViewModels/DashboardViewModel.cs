@@ -21,11 +21,18 @@ namespace GitHubDownloadCheck.ViewModels;
 
 file static class ChartPaints
 {
+    private static bool IsDark => Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark;
+
+    // どのチャートも系列は1つなので、同じ青で揃える（ダーク用は暗い背景向けに一段明るい青）
+    public static SKColor SeriesColor => IsDark ? new SKColor(0x39, 0x87, 0xE5) : new SKColor(0x2A, 0x78, 0xD6);
+
     // テーマに応じたラベル色を返す（チャート構築のたびに評価）
-    public static SolidColorPaint LabelPaint =>
-        Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark
-            ? new SolidColorPaint(new SKColor(200, 200, 200))  // ダーク: 明るいグレー
-            : new SolidColorPaint(new SKColor(60, 60, 60));    // ライト: 暗いグレー
+    public static SolidColorPaint LabelPaint => new(IsDark ? new SKColor(0xC3, 0xC2, 0xB7) : new SKColor(0x52, 0x51, 0x4E));
+
+    // 目盛線は控えめに
+    public static SolidColorPaint GridPaint => new(IsDark ? new SKColor(255, 255, 255, 22) : new SKColor(0, 0, 0, 18), 1);
+
+    public static SolidColorPaint SeriesFill => new(SeriesColor);
 
     public const float TextSize = 12f;
 }
@@ -44,6 +51,9 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _errorMessage = "";
+
+    [ObservableProperty]
+    private string _statusText = "";
 
     [ObservableProperty]
     private bool _hasData;
@@ -68,6 +78,8 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty] private Axis[] _downloadYAxes = Array.Empty<Axis>();
     [ObservableProperty] private Axis[] _assetYAxes = Array.Empty<Axis>();
     [ObservableProperty] private Axis[] _trendYAxes = Array.Empty<Axis>();
+    [ObservableProperty] private bool _hasAssetData;
+    [ObservableProperty] private bool _hasTrendData;
 
     // 期間別ダウンロード数チャート
     [ObservableProperty] private ISeries[] _periodSeries = Array.Empty<ISeries>();
@@ -85,8 +97,15 @@ public partial class DashboardViewModel : ViewModelBase
     // Snapshot trend
     public ObservableCollection<SnapshotRow> SnapshotRows { get; } = new();
 
+    /// <summary>チャートの中身を差し替えたときに発火する。View 側で再描画を確実に行うために使う。</summary>
+    public event EventHandler? ChartsRebuilt;
+
+    private List<GitHubRelease> _currentReleases = new();
     private List<DownloadSnapshot> _currentSnapshots = new();
     private CancellationTokenSource? _cts;
+    // 選択が変わるたびに進める。古い取得の結果が後から届いても、これが違えば捨てる
+    private int _loadGeneration;
+    private Func<string>? _statusFactory;
 
     public DashboardViewModel(GitHubApiService apiService, CacheService cacheService, AnalyticsService analyticsService)
     {
@@ -98,45 +117,115 @@ public partial class DashboardViewModel : ViewModelBase
     partial void OnSelectedRepositoryChanged(RepositoryEntry? value)
     {
         if (value is not null)
-            _ = FetchAsync();
+        {
+            _ = LoadAsync(value, showCachedFirst: true);
+            return;
+        }
+
+        // 選択が外れた（選択中のリポジトリが削除された等）。取得中のものは捨てて画面を空にする
+        ++_loadGeneration;
+        _cts?.Cancel();
+        IsLoading = false;
+        ErrorMessage = "";
+        Clear();
+        SetStatus(() => "");
     }
 
     [RelayCommand]
-    private async Task FetchAsync()
-    {
-        if (SelectedRepository is null) return;
+    private Task FetchAsync() =>
+        SelectedRepository is null ? Task.CompletedTask : LoadAsync(SelectedRepository, showCachedFirst: false);
 
+    private async Task LoadAsync(RepositoryEntry repo, bool showCachedFirst)
+    {
+        // リポジトリは引数で固定する。await の後に SelectedRepository を読むと、
+        // その間に切り替わった別リポジトリの名前で保存・表示してしまう
+        var generation = ++_loadGeneration;
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
+        bool IsCurrent() => generation == _loadGeneration;
 
         IsLoading = true;
         ErrorMessage = "";
-        HasData = false;
 
         try
         {
-            var releases = await _apiService.GetReleasesAsync(
-                SelectedRepository.Owner, SelectedRepository.Repo, ct);
+            if (showCachedFirst)
+            {
+                // 通信を待たずに、前回の取得結果をすぐ出す
+                var cached = await _cacheService.GetSnapshotsAsync(repo.FullName);
+                if (!IsCurrent()) return;
 
-            _cacheService.SaveSnapshot(SelectedRepository.FullName, releases);
-            ApplyData(releases);
-            LoadSnapshotTrend(SelectedRepository.FullName);
-            HasData = true;
+                if (cached.Count > 0)
+                {
+                    Apply(cached[^1].Releases, cached);
+                    SetStatus(() => Strings.Dashboard_Refreshing);
+                }
+                else
+                {
+                    Clear();
+                    SetStatus(() => Strings.Dashboard_Loading);
+                }
+            }
+            else
+            {
+                SetStatus(() => Strings.Dashboard_Refreshing);
+            }
+
+            var releases = await _apiService.GetReleasesAsync(repo.Owner, repo.Repo, ct);
+            var snapshots = await _cacheService.SaveSnapshotAsync(repo.FullName, releases);
+            if (!IsCurrent()) return;
+
+            Apply(releases, snapshots);
+            var fetchedAt = DateTime.Now.ToString("yyyy/MM/dd HH:mm");
+            SetStatus(() => string.Format(Strings.Dashboard_LastUpdated, fetchedAt));
         }
-        catch (OperationCanceledException) { }
+        // 自分で取り消したときだけ黙る。HttpClient のタイムアウトも同じ例外型なので、それは失敗として扱う
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            if (!IsCurrent()) return;
+
+            if (HasData && _currentSnapshots.Count > 0)
+            {
+                var at = _currentSnapshots[^1].FetchedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+                ErrorMessage = string.Format(Strings.Dashboard_ShowingCached, at) + "\n" + ex.Message;
+                SetStatus(() => string.Format(Strings.Dashboard_LastUpdated, at));
+            }
+            else
+            {
+                ErrorMessage = ex.Message;
+                SetStatus(() => "");
+            }
         }
         finally
         {
-            IsLoading = false;
+            if (IsCurrent())
+                IsLoading = false;
         }
     }
 
-    private void ApplyData(List<GitHubRelease> releases)
+    // 状態表示は「作り方」ごと持っておき、言語を切り替えたら同じ作り方で作り直す
+    private void SetStatus(Func<string> factory)
     {
+        _statusFactory = factory;
+        StatusText = factory();
+    }
+
+    /// <summary>表示言語を切り替えたあと、ViewModel が持っている文言を作り直す。</summary>
+    public void RefreshLocalizedText()
+    {
+        if (_statusFactory is not null)
+            StatusText = _statusFactory();
+        BuildCharts();
+    }
+
+    private void Apply(List<GitHubRelease> releases, List<DownloadSnapshot> snapshots)
+    {
+        _currentReleases = releases;
+        _currentSnapshots = snapshots;
+
         var summary = _analyticsService.Summarize(releases);
         TotalDownloads = summary.TotalDownloads;
         ReleaseCount = summary.ReleaseCount;
@@ -150,9 +239,86 @@ public partial class DashboardViewModel : ViewModelBase
         foreach (var r in releases.Where(r => !r.Draft).OrderByDescending(r => r.PublishedAt))
             Releases.Add(r);
 
-        BuildDownloadChart(releases);
-        BuildAssetChart(releases);
+        LoadSnapshotRows();
+        BuildCharts();
+        HasData = true;
     }
+
+    private void Clear()
+    {
+        _currentReleases = new();
+        _currentSnapshots = new();
+        TotalDownloads = 0;
+        ReleaseCount = 0;
+        MostPopularRelease = "-";
+        MostPopularReleaseCount = 0;
+        MostPopularAsset = "-";
+        MostPopularAssetCount = 0;
+        Releases.Clear();
+        SnapshotRows.Clear();
+        BuildCharts();
+        HasData = false;
+    }
+
+    /// <summary>手元のデータからチャートを作り直す（テーマ切替時にも呼ぶ）。</summary>
+    public void BuildCharts()
+    {
+        BuildDownloadChart(_currentReleases);
+        BuildAssetChart(_currentReleases);
+        BuildTrendChart();
+        BuildPeriodChart();
+        ChartsRebuilt?.Invoke(this, EventArgs.Empty);
+    }
+
+    // 横棒グラフではバー末尾に値を出しているので、縦の目盛線は引かない
+    private static Axis ValueAxis(double maxValue, bool showGrid = true) => new()
+    {
+        Labeler = v => $"{v:N0}",
+        TextSize = ChartPaints.TextSize,
+        LabelsPaint = ChartPaints.LabelPaint,
+        SeparatorsPaint = showGrid ? ChartPaints.GridPaint : null,
+        MinLimit = 0,
+        // DL数は整数なので、値が小さいときに 0,0,1,1… と同じ目盛が並ばないようにする
+        MinStep = 1,
+        // 値がすべて0でも軸が潰れないように
+        MaxLimit = maxValue <= 0 ? 1 : null,
+    };
+
+    private static Axis CategoryAxis(string[] labels) => new()
+    {
+        // MinLimit=-0.5, MaxLimit=n-0.5 にすることでティックが各バーの中央 (0.5, 1.5, ...) に揃う
+        Labeler = v =>
+        {
+            // ティック位置: -0.5, 0.5, 1.5, ..., n-0.5
+            // バー中央: 0.5→labels[0], 1.5→labels[1], ...
+            int idx = (int)Math.Floor(v);
+            return idx >= 0 && idx < labels.Length ? labels[idx] : string.Empty;
+        },
+        LabelsPaint = ChartPaints.LabelPaint,
+        SeparatorsPaint = null,
+        TextSize = ChartPaints.TextSize,
+        MinStep = 1,
+        MinLimit = -0.5,
+        MaxLimit = Math.Max(labels.Length, 1) - 0.5,
+    };
+
+    private static RowSeries<double> HorizontalBars(double[] values, string name) => new()
+    {
+        Values = values,
+        Name = name,
+        Fill = ChartPaints.SeriesFill,
+        Rx = 4,
+        Ry = 4,
+        MaxBarWidth = 22,
+        DataLabelsFormatter = point =>
+        {
+            int idx = point.Index;
+            return idx >= 0 && idx < values.Length ? $"{values[idx]:N0}" : string.Empty;
+        },
+        DataLabelsPaint = ChartPaints.LabelPaint,
+        DataLabelsSize = ChartPaints.TextSize,
+        DataLabelsPosition = DataLabelsPosition.End,
+    };
 
     private void BuildDownloadChart(List<GitHubRelease> releases)
     {
@@ -160,110 +326,35 @@ public partial class DashboardViewModel : ViewModelBase
         int n = ordered.Count;
         var labels = ordered.Select(r => r.TagName).ToArray();
         var values = ordered.Select(r => (double)r.TotalDownloadCount).ToArray();
-        DownloadChartHeight = Math.Max(200, n * 40 + 60);
+        DownloadChartHeight = Math.Max(160, n * 40 + 60);
 
-        DownloadSeries = new ISeries[]
-        {
-            new RowSeries<double>
-            {
-                Values = values,
-                Name = Strings.Chart_SeriesDownloads,
-                Fill = new SolidColorPaint(SKColors.SteelBlue),
-                DataLabelsFormatter = (point) =>
-                {
-                    int idx = point.Index;
-                    return idx >= 0 && idx < values.Length ? $"{values[idx]:N0}" : string.Empty;
-                },
-                DataLabelsPaint = ChartPaints.LabelPaint,
-                DataLabelsSize = ChartPaints.TextSize,
-                DataLabelsPosition = DataLabelsPosition.End,
-            }
-        };
-
-        // MinLimit=-0.5, MaxLimit=n-0.5 にすることでティックが各バーの中央 (0.5, 1.5, ...) に揃う
-        ReleaseAxes = new[]
-        {
-            new Axis
-            {
-                Labeler = v =>
-                {
-                    // ティック位置: -0.5, 0.5, 1.5, ..., n-0.5
-                    // バー中央: 0.5→labels[0], 1.5→labels[1], ...
-                    int idx = (int)Math.Floor(v);
-                    return idx >= 0 && idx < labels.Length ? labels[idx] : string.Empty;
-                },
-                LabelsPaint = ChartPaints.LabelPaint,
-                TextSize = ChartPaints.TextSize,
-                MinStep = 1,
-                MinLimit = -0.5,
-                MaxLimit = n - 0.5,
-            }
-        };
-
-        DownloadYAxes = new[]
-        {
-            new Axis { Labeler = v => $"{v:N0}", TextSize = ChartPaints.TextSize, LabelsPaint = ChartPaints.LabelPaint }
-        };
+        DownloadSeries = n == 0 ? Array.Empty<ISeries>() : new ISeries[] { HorizontalBars(values, Strings.Chart_SeriesDownloads) };
+        ReleaseAxes = new[] { CategoryAxis(labels) };
+        DownloadYAxes = new[] { ValueAxis(values.DefaultIfEmpty(0).Max(), showGrid: false) };
     }
 
     private void BuildAssetChart(List<GitHubRelease> releases)
     {
         // 降順取得後に反転: RowSeriesはindex0が下のため、最大値を上に表示するには昇順で渡す
         var breakdown = _analyticsService.GetAssetBreakdown(releases).Take(10).Reverse().ToList();
-        if (breakdown.Count == 0) return;
-
         int n = breakdown.Count;
         var labels = breakdown.Select(a => a.AssetName).ToArray();
         var values = breakdown.Select(a => (double)a.TotalDownloads).ToArray();
-        AssetChartHeight = Math.Max(200, n * 40 + 60);
+        AssetChartHeight = Math.Max(160, n * 40 + 60);
 
-        AssetSeries = new ISeries[]
-        {
-            new RowSeries<double>
-            {
-                Values = values,
-                Name = Strings.Chart_SeriesAssets,
-                Fill = new SolidColorPaint(SKColors.SeaGreen),
-                DataLabelsFormatter = (point) =>
-                {
-                    int idx = point.Index;
-                    return idx >= 0 && idx < values.Length ? $"{values[idx]:N0}" : string.Empty;
-                },
-                DataLabelsPaint = ChartPaints.LabelPaint,
-                DataLabelsSize = ChartPaints.TextSize,
-                DataLabelsPosition = DataLabelsPosition.End,
-            }
-        };
-
-        AssetAxes = new[]
-        {
-            new Axis
-            {
-                Labeler = v =>
-                {
-                    int idx = (int)Math.Floor(v);
-                    return idx >= 0 && idx < labels.Length ? labels[idx] : string.Empty;
-                },
-                LabelsPaint = ChartPaints.LabelPaint,
-                TextSize = ChartPaints.TextSize,
-                MinStep = 1,
-                MinLimit = -0.5,
-                MaxLimit = n - 0.5,
-            }
-        };
-
-        AssetYAxes = new[]
-        {
-            new Axis { Labeler = v => $"{v:N0}", TextSize = ChartPaints.TextSize, LabelsPaint = ChartPaints.LabelPaint }
-        };
+        // 前のリポジトリのチャートが残らないよう、空のときも必ず差し替える
+        HasAssetData = n > 0;
+        AssetSeries = n == 0 ? Array.Empty<ISeries>() : new ISeries[] { HorizontalBars(values, Strings.Chart_SeriesAssets) };
+        AssetAxes = new[] { CategoryAxis(labels) };
+        AssetYAxes = new[] { ValueAxis(values.DefaultIfEmpty(0).Max(), showGrid: false) };
     }
 
     [RelayCommand]
-    private void SetPeriodDaily()  { IsPeriodDaily = true;  IsPeriodWeekly = false; IsPeriodMonthly = false; BuildPeriodChart(); }
+    private void SetPeriodDaily()  { IsPeriodDaily = true;  IsPeriodWeekly = false; IsPeriodMonthly = false; BuildPeriodChart(); ChartsRebuilt?.Invoke(this, EventArgs.Empty); }
     [RelayCommand]
-    private void SetPeriodWeekly() { IsPeriodDaily = false; IsPeriodWeekly = true;  IsPeriodMonthly = false; BuildPeriodChart(); }
+    private void SetPeriodWeekly() { IsPeriodDaily = false; IsPeriodWeekly = true;  IsPeriodMonthly = false; BuildPeriodChart(); ChartsRebuilt?.Invoke(this, EventArgs.Empty); }
     [RelayCommand]
-    private void SetPeriodMonthly(){ IsPeriodDaily = false; IsPeriodWeekly = false; IsPeriodMonthly = true;  BuildPeriodChart(); }
+    private void SetPeriodMonthly(){ IsPeriodDaily = false; IsPeriodWeekly = false; IsPeriodMonthly = true;  BuildPeriodChart(); ChartsRebuilt?.Invoke(this, EventArgs.Empty); }
 
     private void BuildPeriodChart()
     {
@@ -273,19 +364,11 @@ public partial class DashboardViewModel : ViewModelBase
 
         var data = _analyticsService.GetPeriodDownloads(_currentSnapshots, period);
         HasPeriodData = data.Count > 0;
-        if (!HasPeriodData) return;
 
         var labels = data.Select(d => d.Label).ToArray();
         var values = data.Select(d => (double)d.Downloads).ToArray();
 
-        SKColor color = period switch
-        {
-            AnalyticsPeriod.Weekly  => SKColors.MediumPurple,
-            AnalyticsPeriod.Monthly => SKColors.Coral,
-            _                       => SKColors.CornflowerBlue,
-        };
-
-        PeriodSeries = new ISeries[]
+        PeriodSeries = !HasPeriodData ? Array.Empty<ISeries>() : new ISeries[]
         {
             new ColumnSeries<double>
             {
@@ -296,91 +379,90 @@ public partial class DashboardViewModel : ViewModelBase
                     AnalyticsPeriod.Monthly => Strings.Chart_SeriesMonthly,
                     _                       => Strings.Chart_SeriesDaily,
                 },
-                Fill = new SolidColorPaint(color),
+                Fill = ChartPaints.SeriesFill,
+                Rx = 4,
+                Ry = 4,
+                MaxBarWidth = 28,
             }
         };
 
-        PeriodXAxes = new[] { new Axis { Labels = labels, LabelsRotation = -35, TextSize = ChartPaints.TextSize, MinStep = 1, LabelsPaint = ChartPaints.LabelPaint } };
-        PeriodYAxes = new[] { new Axis { Labeler = v => $"{v:N0}", TextSize = ChartPaints.TextSize, LabelsPaint = ChartPaints.LabelPaint } };
+        PeriodXAxes = new[] { new Axis { Labels = labels, LabelsRotation = labels.Length > 12 ? -35 : 0, SeparatorsPaint = null, TextSize = ChartPaints.TextSize, MinStep = 1, LabelsPaint = ChartPaints.LabelPaint } };
+        PeriodYAxes = new[] { ValueAxis(values.DefaultIfEmpty(0).Max()) };
     }
 
-    private void LoadSnapshotTrend(string repoKey)
+    private void LoadSnapshotRows()
     {
-        var rawSnapshots = _cacheService.GetSnapshots(repoKey);
-        
-        // 同一日に複数回収集した場合は、その日の最終分のみを採用して集約する
-        var snapshots = rawSnapshots
-            .GroupBy(s => s.FetchedAt.ToLocalTime().Date)
-            .Select(g => g.OrderByDescending(s => s.FetchedAt).First())
-            .OrderBy(s => s.FetchedAt)
-            .ToList();
+        // 増分はアセット単位で数えるので、取得に失敗した回が混じっても負にならない
+        var points = _analyticsService.GetSnapshotPoints(_currentSnapshots);
 
-        _currentSnapshots = snapshots;
         SnapshotRows.Clear();
+        // 最新のものを上に表示する
+        for (int i = points.Count - 1; i >= 0; i--)
+            SnapshotRows.Add(new SnapshotRow(points[i].FetchedAt.ToLocalTime(), points[i].Total, points[i].Delta));
+    }
 
-        var rows = new List<SnapshotRow>();
-        for (int i = 0; i < snapshots.Count; i++)
+    private void BuildTrendChart()
+    {
+        var points = _analyticsService.GetSnapshotPoints(_currentSnapshots);
+        HasTrendData = points.Count >= 2;
+        if (!HasTrendData)
         {
-            var snap = snapshots[i];
-            var total = snap.Releases.Sum(r => r.TotalDownloadCount);
-            long? delta = i > 0
-                ? total - snapshots[i - 1].Releases.Sum(r => r.TotalDownloadCount)
-                : null;
-
-            rows.Add(new SnapshotRow(snap.FetchedAt.ToLocalTime(), total, delta));
+            TrendSeries = Array.Empty<ISeries>();
+            TrendAxes = Array.Empty<Axis>();
+            TrendYAxes = Array.Empty<Axis>();
+            return;
         }
 
-        // 最新のものを上に表示するため、逆順で追加する
-        for (int i = rows.Count - 1; i >= 0; i--)
-        {
-            SnapshotRows.Add(rows[i]);
-        }
+        var trendValues = points.Select(p => new DateTimePoint(p.FetchedAt, p.Total)).ToArray();
 
-        if (snapshots.Count >= 2)
+        TrendSeries = new ISeries[]
         {
-            var trendValues = snapshots
-                .Select(s => new DateTimePoint(s.FetchedAt, (double)s.Releases.Sum(r => r.TotalDownloadCount)))
-                .ToArray();
-
-            TrendSeries = new ISeries[]
+            new LineSeries<DateTimePoint>
             {
-                new LineSeries<DateTimePoint>
+                Values = trendValues,
+                Name = Strings.Chart_SeriesTrend,
+                Stroke = new SolidColorPaint(ChartPaints.SeriesColor, 2),
+                Fill = new SolidColorPaint(ChartPaints.SeriesColor.WithAlpha(28)),
+                // 点が多いと丸が重なって見づらいので、少ないときだけ打つ
+                GeometrySize = points.Count > 30 ? 0 : 7,
+                GeometryStroke = new SolidColorPaint(ChartPaints.SeriesColor, 2),
+                LineSmoothness = 0,
+            }
+        };
+
+        TrendAxes = new[]
+        {
+            new Axis
+            {
+                Labeler = value =>
                 {
-                    Values = trendValues,
-                    Name = Strings.Chart_SeriesTrend,
-                    Stroke = new SolidColorPaint(SKColors.OrangeRed, 2),
-                    Fill = null,
-                    GeometrySize = 8,
+                    var ticks = (long)value;
+                    if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks) return "";
+                    return new DateTime(ticks, DateTimeKind.Utc).ToLocalTime().ToString("MM/dd");
+                },
+                TextSize = ChartPaints.TextSize,
+                SeparatorsPaint = null,
+                UnitWidth = TimeSpan.FromDays(1).Ticks,
+                MinStep = TimeSpan.FromDays(1).Ticks,
+                LabelsPaint = ChartPaints.LabelPaint,
+            }
+        };
 
-                }
-            };
-
-            TrendAxes = new[]
+        var min = points.Min(p => p.Total);
+        var max = points.Max(p => p.Total);
+        TrendYAxes = new[]
+        {
+            new Axis
             {
-                new Axis
-                {
-                    Labeler = value =>
-                    {
-                        var ticks = (long)value;
-                        if (ticks < DateTime.MinValue.Ticks || ticks > DateTime.MaxValue.Ticks) return "";
-                        return new DateTime(ticks, DateTimeKind.Utc).ToLocalTime().ToString("MM/dd");
-                    },
-                    LabelsRotation = -35,
-                    TextSize = ChartPaints.TextSize,
-                    UnitWidth = TimeSpan.FromDays(1).Ticks,
-                    MinStep = TimeSpan.FromHours(1).Ticks,
-                    LabelsPaint = ChartPaints.LabelPaint,
-                }
-            };
-
-            TrendYAxes = new[]
-            {
-                new Axis { Labeler = v => $"{v:N0}", TextSize = ChartPaints.TextSize, LabelsPaint = ChartPaints.LabelPaint }
-            };
-        }
-
-        // 期間別ダウンロード数チャート
-        BuildPeriodChart();
+                Labeler = v => $"{v:N0}",
+                TextSize = ChartPaints.TextSize,
+                LabelsPaint = ChartPaints.LabelPaint,
+                SeparatorsPaint = ChartPaints.GridPaint,
+                MinStep = 1,
+                MaxLimit = min == max ? max + 1 : null,
+                MinLimit = min == max ? Math.Max(0, min - 1) : null,
+            }
+        };
     }
 }
 

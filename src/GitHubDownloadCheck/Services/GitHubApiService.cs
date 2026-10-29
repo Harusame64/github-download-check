@@ -70,6 +70,13 @@ public class GitHubApiService
 
         var link = string.Join(", ", linkValues);
         var match = Regex.Match(link, @"<([^>]+)>;\s*rel=""next""");
-        return match.Success ? match.Groups[1].Value : null;
+        if (!match.Success) return null;
+
+        // 次ページの要求にもトークンが付くので、GitHub API 以外の宛先には絶対に送らない
+        return Uri.TryCreate(match.Groups[1].Value, UriKind.Absolute, out var next)
+               && next.Scheme == Uri.UriSchemeHttps
+               && next.Host.Equals("api.github.com", StringComparison.OrdinalIgnoreCase)
+            ? next.AbsoluteUri
+            : null;
     }
 }

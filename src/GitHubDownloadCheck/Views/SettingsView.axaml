@@ -9,6 +9,23 @@
   <ScrollViewer>
     <StackPanel Margin="24" Spacing="24">
 
+      <!-- Language -->
+      <Border Classes="card">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0" Text="{h:Localize Settings_LanguageTitle}" FontWeight="SemiBold" FontSize="15"
+                     VerticalAlignment="Center"/>
+          <ComboBox Grid.Column="1" MinWidth="240"
+                    ItemsSource="{Binding LanguageOptions}"
+                    SelectedItem="{Binding SelectedLanguage}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:LanguageOption">
+                <TextBlock Text="{Binding Label}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </Grid>
+      </Border>
+
       <!-- GitHub PAT -->
       <Border Classes="card">
         <StackPanel Spacing="12">
@@ -21,7 +38,7 @@
             <Button Grid.Column="1" Content="{h:Localize Settings_Save}" Command="{Binding SaveTokenCommand}"
                     Classes="accent"/>
           </Grid>
-          <TextBlock Text="{Binding StatusMessage}" Foreground="Green" FontSize="12"
+          <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource AccentBrush}" FontSize="12"
                      IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
         </StackPanel>
       </Border>
@@ -43,7 +60,7 @@
           <ItemsControl ItemsSource="{Binding Repositories}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="models:RepositoryEntry">
-                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                <Border Background="{DynamicResource NavHoverBrush}"
                         CornerRadius="6" Padding="12,8" Margin="0,2">
                   <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="2">

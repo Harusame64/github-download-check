@@ -30,6 +30,16 @@ public partial class MainWindowViewModel : ViewModelBase
         _settings = settings;
         Repositories = settingsViewModel.Repositories;
         CurrentView = dashboardViewModel;
+
+        // 設定画面を開いたままサイドバーでリポジトリを選んだら、ダッシュボードに戻す
+        dashboardViewModel.PropertyChanged += (_, e) =>
+        {
+            // 設定画面で選択中のリポジトリを削除したときは null になる。そのときは設定画面に留まる
+            if (e.PropertyName == nameof(DashboardViewModel.SelectedRepository)
+                && IsSettingsOpen
+                && dashboardViewModel.SelectedRepository is not null)
+                CloseSettings();
+        };
     }
 
     [RelayCommand]
