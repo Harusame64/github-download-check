@@ -278,7 +278,9 @@ public partial class DashboardViewModel : ViewModelBase
         // 横棒グラフは値をバー末尾に出しているので、目盛ラベルも出さない（幅が広いと目盛が詰まって読めない）
         LabelsPaint = showGrid ? ChartPaints.LabelPaint : null,
         SeparatorsPaint = showGrid ? ChartPaints.GridPaint : null,
-        MinLimit = 0,
+        // 横棒グラフで下限を固定すると、値0のバーの末尾ラベル（"0"）が描かれなくなる。
+        // 横棒は下限を LiveCharts に任せ、縦棒（期間別）は 0 起点のままにする
+        MinLimit = showGrid ? 0 : null,
         // DL数は整数なので、値が小さいときに 0,0,1,1… と同じ目盛が並ばないようにする
         MinStep = 1,
         // 値がすべて0でも軸が潰れないように。横棒グラフは最長バーの末尾の値が切れないよう右に余白を取る
@@ -289,8 +291,14 @@ public partial class DashboardViewModel : ViewModelBase
     // 名前が長すぎると左の軸が幅を取り、バーの描ける幅が狭くなるので省略する
     private const int MaxCategoryLabelLength = 32;
 
-    private static string ShortenLabel(string label) =>
-        label.Length <= MaxCategoryLabelLength ? label : label[..(MaxCategoryLabelLength - 1)] + "…";
+    // 絵文字などを途中で割らないよう、char ではなく文字（書記素）単位で数えて切る
+    private static string ShortenLabel(string label)
+    {
+        var info = new System.Globalization.StringInfo(label);
+        return info.LengthInTextElements <= MaxCategoryLabelLength
+            ? label
+            : info.SubstringByTextElements(0, MaxCategoryLabelLength - 1) + "…";
+    }
 
     private static Axis CategoryAxis(string[] labels) => new()
     {
