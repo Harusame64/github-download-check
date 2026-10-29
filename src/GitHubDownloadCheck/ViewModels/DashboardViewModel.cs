@@ -275,14 +275,22 @@ public partial class DashboardViewModel : ViewModelBase
     {
         Labeler = v => $"{v:N0}",
         TextSize = ChartPaints.TextSize,
-        LabelsPaint = ChartPaints.LabelPaint,
+        // 横棒グラフは値をバー末尾に出しているので、目盛ラベルも出さない（幅が広いと目盛が詰まって読めない）
+        LabelsPaint = showGrid ? ChartPaints.LabelPaint : null,
         SeparatorsPaint = showGrid ? ChartPaints.GridPaint : null,
         MinLimit = 0,
         // DL数は整数なので、値が小さいときに 0,0,1,1… と同じ目盛が並ばないようにする
         MinStep = 1,
-        // 値がすべて0でも軸が潰れないように
-        MaxLimit = maxValue <= 0 ? 1 : null,
+        // 値がすべて0でも軸が潰れないように。横棒グラフは最長バーの末尾の値が切れないよう右に余白を取る
+        // （値ラベルの幅は桁数で決まるので、余白も桁数に比例させる。6桁で約1.24倍、9桁で約1.36倍）
+        MaxLimit = maxValue <= 0 ? 1 : showGrid ? null : maxValue * (1 + 0.04 * $"{maxValue:N0}".Length),
     };
+
+    // 名前が長すぎると左の軸が幅を取り、バーの描ける幅が狭くなるので省略する
+    private const int MaxCategoryLabelLength = 32;
+
+    private static string ShortenLabel(string label) =>
+        label.Length <= MaxCategoryLabelLength ? label : label[..(MaxCategoryLabelLength - 1)] + "…";
 
     private static Axis CategoryAxis(string[] labels) => new()
     {
@@ -292,7 +300,7 @@ public partial class DashboardViewModel : ViewModelBase
             // ティック位置: -0.5, 0.5, 1.5, ..., n-0.5
             // バー中央: 0.5→labels[0], 1.5→labels[1], ...
             int idx = (int)Math.Floor(v);
-            return idx >= 0 && idx < labels.Length ? labels[idx] : string.Empty;
+            return idx >= 0 && idx < labels.Length ? ShortenLabel(labels[idx]) : string.Empty;
         },
         LabelsPaint = ChartPaints.LabelPaint,
         SeparatorsPaint = null,
