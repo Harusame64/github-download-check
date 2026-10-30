@@ -17,6 +17,7 @@ public partial class DashboardView : UserControl
     private readonly HashSet<CartesianChart> _pending = new();
     private readonly DispatcherTimer _retryTimer;
     private DashboardViewModel? _vm;
+    private bool _subscribed;
 
     public DashboardView()
     {
@@ -36,7 +37,9 @@ public partial class DashboardView : UserControl
             c.SizeChanged += (_, _) => MarkPending(c);
         }
 
-        _retryTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, (_, _) => RetryPending());
+        // callback 付きのコンストラクタは作った時点で Start() してしまうので、Tick で繋ぐ
+        _retryTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(100) };
+        _retryTimer.Tick += (_, _) => RetryPending();
 
         // スクロール時にチャートの描画を強制的に更新（高速スクロール時の描画漏れ対策）。
         // 画面外で取り残されたチャートは、見えてきたここで測り直す
@@ -52,19 +55,42 @@ public partial class DashboardView : UserControl
     {
         base.OnDataContextChanged(e);
 
-        if (_vm is not null)
-        {
-            _vm.ChartsRebuilt -= OnChartsRebuilt;
-            _vm.PropertyChanged -= OnViewModelPropertyChanged;
-        }
-
+        Unsubscribe();
         _vm = DataContext as DashboardViewModel;
+        if (VisualRoot is not null)
+            Subscribe();
+    }
 
-        if (_vm is not null)
-        {
-            _vm.ChartsRebuilt += OnChartsRebuilt;
-            _vm.PropertyChanged += OnViewModelPropertyChanged;
-        }
+    // VM は App が1つだけ持つ。言語切替で窓を作り直すと、古い画面が購読したまま残らないよう、画面から外れたら切る
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        Subscribe();
+        // 外れている間に中身が変わっていても描き直す
+        MarkAllPending();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        Unsubscribe();
+        _retryTimer.Stop();
+    }
+
+    private void Subscribe()
+    {
+        if (_subscribed || _vm is null) return;
+        _vm.ChartsRebuilt += OnChartsRebuilt;
+        _vm.PropertyChanged += OnViewModelPropertyChanged;
+        _subscribed = true;
+    }
+
+    private void Unsubscribe()
+    {
+        if (!_subscribed || _vm is null) return;
+        _vm.ChartsRebuilt -= OnChartsRebuilt;
+        _vm.PropertyChanged -= OnViewModelPropertyChanged;
+        _subscribed = false;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
